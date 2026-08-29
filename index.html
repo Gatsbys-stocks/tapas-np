@@ -371,30 +371,35 @@
       position:static;
       width:80mm;
       font-family:'Courier New', monospace;
+      font-weight:700;
       color:#000;
       padding:2mm 3mm;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
     }
-    .ticket-imprimir.activo h1{font-size:16px;text-align:center;margin:0 0 2px;}
+    .ticket-imprimir.activo h1{font-size:20px;text-align:center;margin:0 0 3px;letter-spacing:.5px;}
     .ticket-imprimir.activo .centro{text-align:center;}
-    .ticket-imprimir.activo hr{border:none;border-top:1px dashed #000;margin:6px 0;}
-    .ticket-imprimir.activo table{width:100%;border-collapse:collapse;font-size:12px;}
-    .ticket-imprimir.activo td{padding:2px 0;}
+    .ticket-imprimir.activo .datos-local{font-size:13px;margin-bottom:1px;}
+    .ticket-imprimir.activo hr{border:none;border-top:2px dashed #000;margin:7px 0;}
+    .ticket-imprimir.activo table{width:100%;border-collapse:collapse;font-size:14px;}
+    .ticket-imprimir.activo td{padding:3px 0;}
     .ticket-imprimir.activo .der{text-align:right;}
-    .ticket-imprimir.activo .grande{font-size:15px;font-weight:bold;}
-    .ticket-imprimir.activo .tk-item{margin-bottom:4px;line-height:1.35;}
+    .ticket-imprimir.activo .grande{font-size:18px;font-weight:800;}
+    .ticket-imprimir.activo .tk-item{margin-bottom:5px;line-height:1.4;}
     .ticket-imprimir.activo .tk-item .tk-item-nombre{
       display:block;
       white-space:normal;
       word-break:break-word;
-      font-size:12px;
+      font-size:14px;
+      font-weight:700;
     }
     .ticket-imprimir.activo .tk-item .tk-item-precio{
       display:block;
       text-align:right;
-      font-weight:bold;
-      font-size:12px;
+      font-weight:800;
+      font-size:14px;
     }
-    .ticket-imprimir.activo .tk-pago-info{margin-top:4px;font-size:12px;}
+    .ticket-imprimir.activo .tk-pago-info{margin-top:4px;font-size:14px;font-weight:700;}
   }
 
   @media (max-width:900px){
@@ -514,7 +519,8 @@
 <!-- ZONA DE IMPRESIÓN: ticket de comanda / cobro -->
 <div id="ticket" class="ticket-imprimir">
   <h1>BAR KATMANDU</h1>
-  <div class="centro">Terraza · Verano</div>
+  <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
+  <div class="centro datos-local">Tel. 675 19 25 09</div>
   <div class="centro" id="tk-fecha"></div>
   <hr>
   <div id="tk-mesa"></div>
@@ -534,10 +540,13 @@
 <!-- ZONA DE IMPRESIÓN: cierre de caja del día -->
 <div id="ticket-cierre" class="ticket-imprimir">
   <h1>BAR KATMANDU</h1>
+  <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
+  <div class="centro datos-local">Tel. 675 19 25 09</div>
   <div class="centro">Cierre de caja</div>
   <div class="centro" id="tkc-fecha"></div>
   <hr>
   <div id="tkc-resumen"></div>
+
   <hr>
   <div class="centro">Fin del informe</div>
 </div>
