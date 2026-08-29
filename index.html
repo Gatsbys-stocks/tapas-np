@@ -137,6 +137,7 @@
     flex-shrink:0;
   }
   .ticket-head h2{margin:0;font-size:15px;}
+  .ticket-head-botones{display:flex;gap:6px;}
   .ticket-head button{
     background:none;border:1px solid var(--naranja-suave);color:var(--naranja-suave);
     font-size:11px;cursor:pointer;padding:5px 10px;border-radius:5px;font-weight:700;
@@ -425,7 +426,6 @@
   <div class="info-bar">
     <div class="campo"><span class="etq">Fecha</span><b id="info-fecha">-</b></div>
     <div class="campo"><span class="etq">Hora</span><b id="info-hora">-</b></div>
-    <div class="campo"><span class="etq">Ticket nº</span><b id="info-ticket">-</b></div>
   </div>
 
   <div class="mesa-box">
@@ -450,7 +450,10 @@
   <main id="ticket-panel">
     <div class="ticket-head">
       <h2>🧾 Comanda · <span id="ticket-mesa-nombre">Barra</span></h2>
-      <button onclick="vaciarCarrito()">Vaciar</button>
+      <div class="ticket-head-botones">
+        <button onclick="agregarExtra()">➕ Extra</button>
+        <button onclick="vaciarCarrito()">Vaciar</button>
+      </div>
     </div>
     <div class="ticket-cols">
       <span>Producto</span><span class="der">Precio</span><span style="text-align:center;">Cant.</span><span class="der">Total</span><span></span>
@@ -821,6 +824,13 @@ function agregarAlCarrito(item){
   renderCarrito();
 }
 
+// Botón "➕ Extra": para cualquier cosa que no esté en la carta
+// (algo que se ha comido de más, un encargo especial, etc.).
+// Siempre visible arriba de la comanda, sin depender de la categoría.
+function agregarExtra(){
+  agregarAlCarrito({n:"Extra", p:0, editable:true});
+}
+
 function cambiarQty(idx, delta){
   carrito[idx].qty += delta;
   if(carrito[idx].qty<=0) carrito.splice(idx,1);
@@ -888,7 +898,6 @@ function actualizarInfoBar(){
   const ahora = new Date();
   document.getElementById('info-fecha').textContent = ahora.toLocaleDateString('es-ES');
   document.getElementById('info-hora').textContent = ahora.toLocaleTimeString('es-ES');
-  document.getElementById('info-ticket').textContent = String(verNumeroTicketActual()).padStart(4,'0');
 }
 setInterval(actualizarInfoBar, 1000);
 
