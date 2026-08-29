@@ -267,15 +267,20 @@
   /* TICKET (solo visible al imprimir) */
   #ticket{display:none;}
 
+  @page{
+    size:80mm auto;
+    margin:0;
+  }
   @media print{
+    html,body{width:80mm;height:auto;}
     body *{visibility:hidden;}
     #ticket, #ticket *{visibility:visible;}
     #ticket{
       display:block;
-      position:absolute;top:0;left:0;width:280px;
+      position:absolute;top:0;left:0;width:80mm;
       font-family:'Courier New', monospace;
       color:#000;
-      padding:6px;
+      padding:2mm 3mm;
     }
     #ticket h1{font-size:16px;text-align:center;margin:0 0 2px;}
     #ticket .centro{text-align:center;}
