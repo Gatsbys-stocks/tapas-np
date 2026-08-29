@@ -331,20 +331,6 @@
   .card .desc{font-size:10px;color:var(--gris);margin-top:2px;flex:1;}
   .card .precio{font-size:13px;font-weight:800;color:var(--naranja);margin-top:5px;}
 
-  #modal-menu{
-    position:fixed;inset:0;background:rgba(0,0,0,0.75);
-    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
-  }
-  #modal-menu.abierto{display:flex;}
-  #modal-menu .contenido{
-    background:white;border-radius:10px;max-width:95%;max-height:95%;overflow:auto;padding:10px;position:relative;
-  }
-  #modal-menu img{max-width:100%;display:block;margin-bottom:10px;border-radius:6px;}
-  #modal-menu .cerrar{
-    position:absolute;top:8px;right:10px;background:var(--rojo);color:white;border:none;
-    width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;
-  }
-
   .ticket-imprimir{display:none;}
 
   @page{
@@ -459,7 +445,7 @@
   </div>
 
   <div class="mesa-box">
-    <button class="btn-carta" onclick="abrirMenuFotos()">📋 Ver carta escaneada</button>
+    <button class="btn-carta" onclick="abrirCajonQZ()">🗄️ Abrir caja</button>
     <button class="btn-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
     <button class="btn-diseno" onclick="cambiarDiseno()">🎨 Diseño</button>
     <button class="btn-carta" onclick="abrirCierre()">📊 Cierre del día</button>
@@ -524,14 +510,6 @@
     </main>
   </aside>
 
-</div>
-
-<div id="modal-menu">
-  <div class="contenido">
-    <button class="cerrar" onclick="cerrarMenuFotos()">✕</button>
-    <img src="img/bebidas-1.jpg" alt="Carta de bebidas Bar Katmandu">
-    <img src="img/comida-1.jpg" alt="Carta de comida Bar Katmandu">
-  </div>
 </div>
 
 <div id="modal-pago">
@@ -1234,9 +1212,6 @@ async function cerrarDia(){
   guardarVentasDia();
   renderCierre();
 }
-
-function abrirMenuFotos(){ document.getElementById('modal-menu').classList.add('abierto'); }
-function cerrarMenuFotos(){ document.getElementById('modal-menu').classList.remove('abierto'); }
 
 function toggleFullscreen(){
   if(!document.fullscreenElement){
