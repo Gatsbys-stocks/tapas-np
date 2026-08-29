@@ -541,19 +541,35 @@ let carrito = []; // {n, p, qty}
    ========================================================== */
 const MESAS = [
   {n:1, subs:['A','B']},
-  {n:2, subs:['A','B','C']},
+  {n:2, subs:['A','B']},
   {n:3, subs:['A','B']},
   {n:4, subs:['A','B']},
   {n:5, subs:[]},
-  {n:6, subs:[]},
-  {n:7, subs:[]},
+  {n:6, subs:['A','B']},
+  {n:7, subs:['A','B','C']},
   {n:8, subs:['A','B','C']},
-  {n:9, subs:[]},
-  {n:10, subs:[]},
 ];
 
 let mesaActual = 'Barra';
-const comandasPorMesa = { 'Barra': [] };
+let comandasPorMesa = { 'Barra': [] };
+
+/* ---- persistencia: guardamos las comandas en el propio dispositivo,
+   así un refresco de página o un cierre accidental del navegador
+   no borra los pedidos en curso ---- */
+function guardarEstado(){
+  localStorage.setItem('katmandu_comandas', JSON.stringify(comandasPorMesa));
+  localStorage.setItem('katmandu_mesa_actual', mesaActual);
+}
+function cargarEstado(){
+  try{
+    const guardado = localStorage.getItem('katmandu_comandas');
+    if(guardado) comandasPorMesa = JSON.parse(guardado);
+  }catch(e){ comandasPorMesa = { 'Barra': [] }; }
+  if(!comandasPorMesa['Barra']) comandasPorMesa['Barra'] = [];
+  mesaActual = localStorage.getItem('katmandu_mesa_actual') || 'Barra';
+  carrito = comandasPorMesa[mesaActual] || [];
+  comandasPorMesa[mesaActual] = carrito;
+}
 
 function claveMesa(n, sub){ return sub ? (n+sub) : String(n); }
 
@@ -601,6 +617,7 @@ function seleccionarMesa(key){
   comandasPorMesa[key] = carrito;
   document.getElementById('mesa-actual-texto').textContent = key==='Barra' ? 'Barra' : ('Mesa '+key);
   document.getElementById('ticket-mesa-nombre').textContent = key==='Barra' ? 'Barra' : ('Mesa '+key);
+  guardarEstado();
   renderCarrito();
   cerrarMesas();
 }
@@ -704,6 +721,7 @@ function renderCarrito(){
 
   // mantenemos guardada la comanda de esta mesa
   comandasPorMesa[mesaActual] = carrito;
+  guardarEstado();
 }
 
 /* ---------- reloj e info de cabecera ---------- */
@@ -757,6 +775,7 @@ window.onafterprint = function(){
   if(confirm('¿Comanda cobrada? Se vaciará esta mesa para el siguiente cliente.')){
     carrito = [];
     comandasPorMesa[mesaActual] = [];
+    guardarEstado();
     renderCarrito();
   }
 };
@@ -766,6 +785,9 @@ function abrirMenuFotos(){ document.getElementById('modal-menu').classList.add('
 function cerrarMenuFotos(){ document.getElementById('modal-menu').classList.remove('abierto'); }
 
 render();
+cargarEstado();
+document.getElementById('mesa-actual-texto').textContent = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
+document.getElementById('ticket-mesa-nombre').textContent = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
 renderCarrito();
 actualizarInfoBar();
 </script>
