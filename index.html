@@ -60,14 +60,56 @@
   header .info-bar .campo span.etq{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--naranja-suave);}
 
   header .mesa-box{display:flex;align-items:center;gap:8px;}
-  header input#mesa{
-    width:130px;padding:8px 10px;border-radius:6px;border:none;font-size:13px;
-  }
   header label{font-size:11px;color:var(--naranja-suave);}
   header .btn-carta{
     background:var(--naranja);border:none;color:white;padding:8px 12px;border-radius:6px;
     font-size:11.5px;cursor:pointer;font-weight:700;white-space:nowrap;
   }
+  header .btn-mesa{
+    background:var(--azul-suave);border:1px solid var(--naranja-suave);color:white;padding:8px 14px;border-radius:6px;
+    font-size:13px;cursor:pointer;font-weight:800;white-space:nowrap;
+  }
+
+  /* ---- Selector de mesas (modal) ---- */
+  #modal-mesas{
+    position:fixed;inset:0;background:rgba(0,0,0,0.75);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  #modal-mesas.abierto{display:flex;}
+  #modal-mesas .contenido{
+    background:white;border-radius:12px;max-width:640px;width:100%;max-height:90%;overflow:auto;padding:18px;position:relative;
+  }
+  #modal-mesas h2{margin:0 0 4px;font-size:17px;color:var(--azul);}
+  #modal-mesas .ayuda{font-size:12px;color:var(--gris);margin-bottom:14px;}
+  #modal-mesas .cerrar{
+    position:absolute;top:10px;right:12px;background:var(--rojo);color:white;border:none;
+    width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;
+  }
+  .mesas-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(110px,1fr));
+    gap:10px;
+  }
+  .mesa-item{
+    background:var(--crema);
+    border:2px solid var(--linea);
+    border-radius:10px;
+    padding:8px;
+    text-align:center;
+  }
+  .mesa-item .mesa-num{
+    background:var(--azul);color:white;border:none;border-radius:7px;
+    width:100%;padding:10px 4px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:6px;
+  }
+  .mesa-item .mesa-num.activa{background:var(--verde);}
+  .mesa-item .mesa-num.ocupada{box-shadow:0 0 0 3px var(--naranja) inset;}
+  .mesa-item .subs{display:flex;gap:4px;justify-content:center;}
+  .mesa-item .subs button{
+    flex:1;padding:6px 0;border-radius:6px;border:1px solid var(--azul-suave);background:white;color:var(--azul);
+    font-size:12px;font-weight:800;cursor:pointer;
+  }
+  .mesa-item .subs button.activa{background:var(--verde);color:white;border-color:var(--verde);}
+  .mesa-item .subs button.ocupada{box-shadow:0 0 0 2px var(--naranja) inset;}
 
   /* ===== LAYOUT PRINCIPAL ===== */
   .app{
@@ -174,33 +216,32 @@
   }
   nav#cats{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:8px;
-    padding:10px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:6px;
+    padding:8px;
     flex-shrink:0;
-    max-height:38%;
     overflow-y:auto;
     background:white;
     border-bottom:2px solid var(--azul);
   }
   nav#cats button{
     border:none;
-    border-radius:8px;
+    border-radius:7px;
     color:white;
-    font-size:12.5px;
+    font-size:11px;
     font-weight:800;
     text-transform:uppercase;
-    letter-spacing:.3px;
+    letter-spacing:.2px;
     cursor:pointer;
-    min-height:64px;
-    padding:6px;
+    min-height:46px;
+    padding:4px;
     display:flex;
     align-items:center;
     justify-content:center;
     text-align:center;
     box-shadow:var(--sombra);
     filter:brightness(0.92);
-    line-height:1.2;
+    line-height:1.15;
   }
   nav#cats button.active{
     outline:3px solid var(--negro);
@@ -289,6 +330,19 @@
     #ticket td{padding:2px 0;}
     #ticket .der{text-align:right;}
     #ticket .grande{font-size:15px;font-weight:bold;}
+    #ticket .tk-item{margin-bottom:4px;line-height:1.35;}
+    #ticket .tk-item .tk-item-nombre{
+      display:block;
+      white-space:normal;
+      word-break:break-word;
+      font-size:12px;
+    }
+    #ticket .tk-item .tk-item-precio{
+      display:block;
+      text-align:right;
+      font-weight:bold;
+      font-size:12px;
+    }
   }
 
   @media (max-width:900px){
@@ -316,16 +370,25 @@
 
   <div class="mesa-box">
     <button class="btn-carta" onclick="abrirMenuFotos()">📋 Ver carta escaneada</button>
-    <label for="mesa">Mesa/Cliente</label>
-    <input id="mesa" type="text" placeholder="Ej. Mesa 4">
+    <button class="btn-mesa" id="btn-mesa-actual" onclick="abrirMesas()">🍽️ Mesa: <span id="mesa-actual-texto">Barra</span></button>
   </div>
 </header>
+
+<!-- Modal selector de mesas -->
+<div id="modal-mesas">
+  <div class="contenido">
+    <button class="cerrar" onclick="cerrarMesas()">✕</button>
+    <h2>Elegir mesa</h2>
+    <div class="ayuda">Toca el número para la mesa completa, o A/B/C si la mesa está dividida. Las mesas con borde naranja tienen una comanda abierta.</div>
+    <div class="mesas-grid" id="mesas-grid"></div>
+  </div>
+</div>
 
 <div class="app">
 
   <main id="ticket-panel">
     <div class="ticket-head">
-      <h2>🧾 Comanda</h2>
+      <h2>🧾 Comanda · <span id="ticket-mesa-nombre">Barra</span></h2>
       <button onclick="vaciarCarrito()">Vaciar</button>
     </div>
     <div class="ticket-cols">
@@ -370,7 +433,7 @@
   <div id="tk-mesa"></div>
   <div id="tk-numero"></div>
   <hr>
-  <table id="tk-lineas"></table>
+  <div id="tk-lineas"></div>
   <hr>
   <table>
     <tr><td>Artículos</td><td class="der" id="tk-articulos"></td></tr>
@@ -471,6 +534,80 @@ const MENU = {
 let categoriaActual = Object.keys(MENU)[0];
 let carrito = []; // {n, p, qty}
 
+/* ==========================================================
+   MESAS
+   Cada mesa puede tener sub-divisiones (A/B/C) para cuando se
+   junta o separa. Edita aquí el número de mesas y sus letras.
+   ========================================================== */
+const MESAS = [
+  {n:1, subs:['A','B']},
+  {n:2, subs:['A','B','C']},
+  {n:3, subs:['A','B']},
+  {n:4, subs:['A','B']},
+  {n:5, subs:[]},
+  {n:6, subs:[]},
+  {n:7, subs:[]},
+  {n:8, subs:['A','B','C']},
+  {n:9, subs:[]},
+  {n:10, subs:[]},
+];
+
+let mesaActual = 'Barra';
+const comandasPorMesa = { 'Barra': [] };
+
+function claveMesa(n, sub){ return sub ? (n+sub) : String(n); }
+
+function renderMesas(){
+  const grid = document.getElementById('mesas-grid');
+  grid.innerHTML = '';
+
+  // Opción "Barra / Para llevar" (sin número)
+  const itemBarra = document.createElement('div');
+  itemBarra.className = 'mesa-item';
+  const ocupBarra = (comandasPorMesa['Barra']||[]).length>0;
+  itemBarra.innerHTML = `<button class="mesa-num ${mesaActual==='Barra'?'activa':''} ${ocupBarra?'ocupada':''}">Barra</button>`;
+  itemBarra.querySelector('.mesa-num').onclick = ()=> seleccionarMesa('Barra');
+  grid.appendChild(itemBarra);
+
+  MESAS.forEach(m=>{
+    const item = document.createElement('div');
+    item.className = 'mesa-item';
+    const keyPlano = claveMesa(m.n, null);
+    const ocupPlano = (comandasPorMesa[keyPlano]||[]).length>0;
+    const activaPlano = mesaActual===keyPlano;
+    let html = `<button class="mesa-num ${activaPlano?'activa':''} ${ocupPlano?'ocupada':''}">Mesa ${m.n}</button>`;
+    if(m.subs.length){
+      html += '<div class="subs">' + m.subs.map(s=>{
+        const key = claveMesa(m.n, s);
+        const ocup = (comandasPorMesa[key]||[]).length>0;
+        const activa = mesaActual===key;
+        return `<button data-key="${key}" class="${activa?'activa':''} ${ocup?'ocupada':''}">${s}</button>`;
+      }).join('') + '</div>';
+    }
+    item.innerHTML = html;
+    item.querySelector('.mesa-num').onclick = ()=> seleccionarMesa(keyPlano);
+    item.querySelectorAll('.subs button').forEach(btn=>{
+      btn.onclick = ()=> seleccionarMesa(btn.dataset.key);
+    });
+    grid.appendChild(item);
+  });
+}
+
+function seleccionarMesa(key){
+  // guardamos la comanda de la mesa anterior antes de cambiar
+  comandasPorMesa[mesaActual] = carrito;
+  mesaActual = key;
+  carrito = comandasPorMesa[key] || [];
+  comandasPorMesa[key] = carrito;
+  document.getElementById('mesa-actual-texto').textContent = key==='Barra' ? 'Barra' : ('Mesa '+key);
+  document.getElementById('ticket-mesa-nombre').textContent = key==='Barra' ? 'Barra' : ('Mesa '+key);
+  renderCarrito();
+  cerrarMesas();
+}
+
+function abrirMesas(){ renderMesas(); document.getElementById('modal-mesas').classList.add('abierto'); }
+function cerrarMesas(){ document.getElementById('modal-mesas').classList.remove('abierto'); }
+
 /* ---------- construir navegación (mosaico de categorías) ---------- */
 const catsNav = document.getElementById('cats');
 Object.keys(MENU).forEach(cat=>{
@@ -564,6 +701,9 @@ function renderCarrito(){
   document.getElementById('total-articulos').textContent = totalArticulos;
   document.getElementById('total-precio').textContent = totalPrecio.toFixed(2)+' €';
   document.getElementById('btn-imprimir').disabled = carrito.length===0;
+
+  // mantenemos guardada la comanda de esta mesa
+  comandasPorMesa[mesaActual] = carrito;
 }
 
 /* ---------- reloj e info de cabecera ---------- */
@@ -585,19 +725,23 @@ function siguienteNumeroTicket(){
 
 function imprimirTicket(){
   if(carrito.length===0) return;
-  const mesa = document.getElementById('mesa').value.trim();
+  const mesaTexto = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
   const num = siguienteNumeroTicket();
   const ahora = new Date();
   document.getElementById('tk-fecha').textContent = ahora.toLocaleDateString('es-ES') + '  ' + ahora.toLocaleTimeString('es-ES');
-  document.getElementById('tk-mesa').textContent = mesa ? ('Mesa/Cliente: '+mesa) : '';
+  document.getElementById('tk-mesa').textContent = mesaTexto;
   document.getElementById('tk-numero').textContent = 'Ticket nº: ' + String(num).padStart(4,'0');
 
-  const tabla = document.getElementById('tk-lineas');
-  tabla.innerHTML = '';
+  const lineas = document.getElementById('tk-lineas');
+  lineas.innerHTML = '';
   carrito.forEach(c=>{
-    const fila = document.createElement('tr');
-    fila.innerHTML = `<td>${c.qty}x ${c.n}</td><td class="der">${(c.p*c.qty).toFixed(2)}€</td>`;
-    tabla.appendChild(fila);
+    const fila = document.createElement('div');
+    fila.className = 'tk-item';
+    fila.innerHTML = `
+      <span class="tk-item-nombre">${c.qty}x ${c.n}</span>
+      <span class="tk-item-precio">${(c.p*c.qty).toFixed(2)}€</span>
+    `;
+    lineas.appendChild(fila);
   });
 
   const totalArticulos = carrito.reduce((s,c)=>s+c.qty,0);
@@ -608,11 +752,11 @@ function imprimirTicket(){
   window.print();
 }
 
-// tras imprimir (o cancelar impresión), preguntamos si se cobró para vaciar la comanda
+// tras imprimir (o cancelar impresión), preguntamos si se cobró para vaciar esa mesa
 window.onafterprint = function(){
-  if(confirm('¿Comanda cobrada? Se vaciará el TPV para el siguiente pedido.')){
+  if(confirm('¿Comanda cobrada? Se vaciará esta mesa para el siguiente cliente.')){
     carrito = [];
-    document.getElementById('mesa').value='';
+    comandasPorMesa[mesaActual] = [];
     renderCarrito();
   }
 };
