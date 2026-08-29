@@ -408,6 +408,9 @@
   }
 </style>
 </head>
+<!-- QZ Tray: puente entre esta web y la impresora/cajón. Requiere tener
+     instalado QZ Tray en el ordenador/tablet (https://qz.io/download/) -->
+<script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js"></script>
 <body>
 
 <header>
@@ -1001,6 +1004,34 @@ document.getElementById('input-recibido').addEventListener('input', ()=>{
   }
 });
 
+/* ---------- Apertura del cajón portamonedas (impresora en red + QZ Tray) ----------
+   Requisitos:
+   1) Tener instalado QZ Tray en el ordenador/tablet donde se abre esta web:
+      https://qz.io/download/  (queda funcionando en segundo plano)
+   2) Que la impresora esté dada de alta en el sistema operativo (Windows/Mac)
+      con la IP de tu impresora, y poner aquí ABAJO el nombre EXACTO con el
+      que aparece en la lista de impresoras de tu ordenador.
+   La primera vez que se use, QZ Tray mostrará un aviso de seguridad pidiendo
+   permitir la conexión: hay que darle a "Allow/Permitir" (y puede marcarse
+   "recordar" para que no vuelva a preguntar). ---- */
+const NOMBRE_IMPRESORA_CAJON = "NOMBRE_DE_TU_IMPRESORA"; // <-- cámbialo por el nombre real
+
+function abrirCajonQZ(){
+  if(typeof qz === 'undefined'){
+    console.warn('QZ Tray no se ha podido cargar (¿sin conexión a internet?).');
+    return;
+  }
+  const listo = qz.websocket.isActive() ? Promise.resolve() : qz.websocket.connect();
+  listo
+    .then(()=> qz.configs.create(NOMBRE_IMPRESORA_CAJON))
+    .then(config=>{
+      // ESC p 0 25 250 -> pulso al pin 2 del conector RJ11 del cajón
+      const abrirPin2 = '\x1B\x70\x00\x19\xFA';
+      return qz.print(config, [abrirPin2]);
+    })
+    .catch(err=> console.error('No se pudo abrir el cajón:', err));
+}
+
 function confirmarPago(){
   if(!metodoSeleccionado || carrito.length===0) return;
   const totalArticulos = carrito.reduce((s,c)=>s+c.qty,0);
@@ -1027,6 +1058,10 @@ function confirmarPago(){
     recibido: recibido,
     cambio: cambio
   });
+
+  if(metodoSeleccionado==='efectivo'){
+    abrirCajonQZ();
+  }
 
   construirTicketComanda(mesaTexto, num, {metodo:metodoSeleccionado, recibido, cambio});
   document.getElementById('ticket').classList.add('activo');
