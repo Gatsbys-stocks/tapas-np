@@ -407,6 +407,36 @@
     aside#panel-productos{width:340px;}
     header .info-bar{display:none;}
   }
+
+  /* ===== DISEÑOS (4 combinaciones de color intercambiables) =====
+     El diseño 1 es el original. Los botones "🎨 Diseño" van
+     rotando el atributo data-tema del body, que sobreescribe
+     estas variables de color. ===== */
+  body[data-tema="2"]{
+    --azul:#1b4332; --azul-suave:#2d6a4f;
+    --naranja:#d4a017; --naranja-suave:#f0dfa0;
+    --ticket-bg:#f3f7ee; --linea:#dfe8d4;
+  }
+  body[data-tema="3"]{
+    --azul:#3a1c56; --azul-suave:#5e3a82;
+    --naranja:#e0609a; --naranja-suave:#f3b8d1;
+    --ticket-bg:#faf0f6; --linea:#ecd9e6;
+  }
+  body[data-tema="4"]{
+    --azul:#5c1a1a; --azul-suave:#8a2b2b;
+    --naranja:#f2994a; --naranja-suave:#f9cd93;
+    --ticket-bg:#fff5eb; --linea:#f1ddc8;
+  }
+
+  header .btn-diseno, header .btn-fullscreen, .btn-mover-ticket{
+    background:var(--azul-suave);border:1px solid var(--naranja-suave);color:white;
+    padding:8px 12px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:700;white-space:nowrap;
+  }
+  .btn-mover-ticket{
+    background:none;border:1px solid var(--naranja-suave);color:var(--naranja-suave);
+    font-size:11px;padding:5px 10px;border-radius:5px;font-weight:700;
+  }
+  header .mesa-box{flex-wrap:wrap;row-gap:6px;}
 </style>
 </head>
 <!-- QZ Tray: puente entre esta web y la impresora/cajón. Requiere tener
@@ -430,6 +460,8 @@
 
   <div class="mesa-box">
     <button class="btn-carta" onclick="abrirMenuFotos()">📋 Ver carta escaneada</button>
+    <button class="btn-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
+    <button class="btn-diseno" onclick="cambiarDiseno()">🎨 Diseño</button>
     <button class="btn-carta" onclick="abrirCierre()">📊 Cierre del día</button>
     <button class="btn-mesa" id="btn-mesa-actual" onclick="abrirMesas()">🍽️ Mesa: <span id="mesa-actual-texto">Barra</span></button>
   </div>
@@ -439,8 +471,8 @@
 <div id="modal-mesas">
   <div class="contenido">
     <button class="cerrar" onclick="cerrarMesas()">✕</button>
-    <h2>Elegir mesa</h2>
-    <div class="ayuda">Toca el número para la mesa completa, o A/B/C si la mesa está dividida. Las mesas con borde naranja tienen una comanda abierta.</div>
+    <h2 id="mesas-titulo">Elegir mesa</h2>
+    <div class="ayuda" id="mesas-ayuda">Toca el número para la mesa completa, o A/B/C si la mesa está dividida. Las mesas con borde naranja tienen una comanda abierta.</div>
     <div class="mesas-grid" id="mesas-grid"></div>
   </div>
 </div>
@@ -453,6 +485,7 @@
       <div class="ticket-head-botones">
         <button onclick="agregarExtra()">➕ Extra</button>
         <button onclick="vaciarCarrito()">Vaciar</button>
+        <button class="btn-mover-ticket" onclick="abrirMoverTicket()">🔀 Mover mesa</button>
       </div>
     </div>
     <div class="ticket-cols">
@@ -720,16 +753,22 @@ function cargarEstado(){
 
 function claveMesa(n, sub){ return sub ? (n+sub) : String(n); }
 
+// Si modoMover está activo, tocar una mesa en el selector no cambia de
+// vista: mueve la comanda actual a esa mesa (ver abrirMoverTicket).
+let modoMover = false;
+
 function renderMesas(){
   const grid = document.getElementById('mesas-grid');
   grid.innerHTML = '';
+
+  const accion = modoMover ? moverComandaAMesa : seleccionarMesa;
 
   // Opción "Barra / Para llevar" (sin número)
   const itemBarra = document.createElement('div');
   itemBarra.className = 'mesa-item';
   const ocupBarra = (comandasPorMesa['Barra']||[]).length>0;
   itemBarra.innerHTML = `<button class="mesa-num ${mesaActual==='Barra'?'activa':''} ${ocupBarra?'ocupada':''}">Barra</button>`;
-  itemBarra.querySelector('.mesa-num').onclick = ()=> seleccionarMesa('Barra');
+  itemBarra.querySelector('.mesa-num').onclick = ()=> accion('Barra');
   grid.appendChild(itemBarra);
 
   MESAS.forEach(m=>{
@@ -748,9 +787,9 @@ function renderMesas(){
       }).join('') + '</div>';
     }
     item.innerHTML = html;
-    item.querySelector('.mesa-num').onclick = ()=> seleccionarMesa(keyPlano);
+    item.querySelector('.mesa-num').onclick = ()=> accion(keyPlano);
     item.querySelectorAll('.subs button').forEach(btn=>{
-      btn.onclick = ()=> seleccionarMesa(btn.dataset.key);
+      btn.onclick = ()=> accion(btn.dataset.key);
     });
     grid.appendChild(item);
   });
@@ -769,8 +808,60 @@ function seleccionarMesa(key){
   cerrarMesas();
 }
 
-function abrirMesas(){ renderMesas(); document.getElementById('modal-mesas').classList.add('abierto'); }
-function cerrarMesas(){ document.getElementById('modal-mesas').classList.remove('abierto'); }
+function abrirMesas(){
+  modoMover = false;
+  document.getElementById('mesas-titulo').textContent = 'Elegir mesa';
+  document.getElementById('mesas-ayuda').textContent = 'Toca el número para la mesa completa, o A/B/C si la mesa está dividida. Las mesas con borde naranja tienen una comanda abierta.';
+  renderMesas();
+  document.getElementById('modal-mesas').classList.add('abierto');
+}
+function cerrarMesas(){
+  modoMover = false;
+  document.getElementById('modal-mesas').classList.remove('abierto');
+}
+
+/* ---------- Mover ticket (cuando un cliente cambia de mesa) ----------
+   Traslada lo que lleva pedido la mesa actual a otra mesa, sumando las
+   cantidades si en la mesa de destino ya había algo pedido. */
+function abrirMoverTicket(){
+  if(carrito.length===0){ alert('No hay comanda que mover en esta mesa.'); return; }
+  modoMover = true;
+  document.getElementById('mesas-titulo').textContent = '¿A qué mesa se mueve la comanda?';
+  document.getElementById('mesas-ayuda').textContent = 'Toca la mesa a la que se ha cambiado el cliente. Se llevará todo lo que lleva pedido en "' + (mesaActual==='Barra'?'Barra':'Mesa '+mesaActual) + '".';
+  renderMesas();
+  document.getElementById('modal-mesas').classList.add('abierto');
+}
+
+function moverComandaAMesa(destino){
+  if(destino===mesaActual){ alert('Ya estás en esa mesa.'); modoMover=false; cerrarMesas(); return; }
+  const origen = mesaActual;
+  const comandaOrigen = comandasPorMesa[origen] || [];
+  if(comandaOrigen.length===0){ modoMover=false; cerrarMesas(); return; }
+
+  const comandaDestino = comandasPorMesa[destino] || [];
+  if(comandaDestino.length>0){
+    const destinoTexto = destino==='Barra' ? 'Barra' : ('Mesa '+destino);
+    if(!confirm('"'+destinoTexto+'" ya tiene una comanda abierta. ¿Sumar los productos a lo que ya hay pedido allí?')) return;
+  }
+
+  comandaOrigen.forEach(item=>{
+    const existente = comandaDestino.find(c=> c.n===item.n && c.p===item.p);
+    if(existente){ existente.qty += item.qty; }
+    else { comandaDestino.push({n:item.n, p:item.p, qty:item.qty}); }
+  });
+
+  comandasPorMesa[origen] = [];
+  comandasPorMesa[destino] = comandaDestino;
+
+  modoMover = false;
+  mesaActual = destino;
+  carrito = comandasPorMesa[destino];
+  document.getElementById('mesa-actual-texto').textContent = destino==='Barra' ? 'Barra' : ('Mesa '+destino);
+  document.getElementById('ticket-mesa-nombre').textContent = destino==='Barra' ? 'Barra' : ('Mesa '+destino);
+  guardarEstado();
+  renderCarrito();
+  cerrarMesas();
+}
 
 /* ---------- construir navegación (mosaico de categorías) ---------- */
 const catsNav = document.getElementById('cats');
@@ -1147,7 +1238,38 @@ function cerrarDia(){
 function abrirMenuFotos(){ document.getElementById('modal-menu').classList.add('abierto'); }
 function cerrarMenuFotos(){ document.getElementById('modal-menu').classList.remove('abierto'); }
 
+/* ---------- Pantalla completa ---------- */
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen().catch(()=>{
+      alert('El navegador ha bloqueado la pantalla completa. Puede activarse desde el propio navegador.');
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange', ()=>{
+  const btn = document.getElementById('btn-fullscreen');
+  btn.textContent = document.fullscreenElement ? '🗗 Salir de pantalla completa' : '⛶ Pantalla completa';
+});
+
+/* ---------- Diseño (4 combinaciones de color) ----------
+   Cada toque va rotando entre los 4 diseños. Se guarda en el propio
+   dispositivo para que no haya que elegirlo cada vez que se abre. */
+const TOTAL_DISENOS = 4;
+let disenoActual = parseInt(localStorage.getItem('katmandu_diseno')||'1', 10);
+function aplicarDiseno(n){
+  document.body.setAttribute('data-tema', n);
+  localStorage.setItem('katmandu_diseno', n);
+  disenoActual = n;
+}
+function cambiarDiseno(){
+  const siguiente = disenoActual>=TOTAL_DISENOS ? 1 : disenoActual+1;
+  aplicarDiseno(siguiente);
+}
+
 render();
+aplicarDiseno(disenoActual);
 cargarEstado();
 cargarVentasDia();
 document.getElementById('mesa-actual-texto').textContent = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
