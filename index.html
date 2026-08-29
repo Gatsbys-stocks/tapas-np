@@ -31,7 +31,6 @@
     overflow:hidden;
   }
 
-  /* ===== HEADER (barra de información estilo TPV) ===== */
   header{
     background:var(--negro);
     color:#fff;
@@ -70,7 +69,6 @@
     font-size:13px;cursor:pointer;font-weight:800;white-space:nowrap;
   }
 
-  /* ---- Selector de mesas (modal) ---- */
   #modal-mesas{
     position:fixed;inset:0;background:rgba(0,0,0,0.75);
     display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
@@ -111,14 +109,12 @@
   .mesa-item .subs button.activa{background:var(--verde);color:white;border-color:var(--verde);}
   .mesa-item .subs button.ocupada{box-shadow:0 0 0 2px var(--naranja) inset;}
 
-  /* ===== LAYOUT PRINCIPAL ===== */
   .app{
     flex:1;
     display:flex;
     min-height:0;
   }
 
-  /* ---- IZQUIERDA: Comanda / Ticket en curso ---- */
   main#ticket-panel{
     flex:1.15;
     display:flex;
@@ -206,7 +202,6 @@
   .btn-fin:disabled{background:#c8c8c8;cursor:not-allowed;}
   .btn-fin:active{opacity:0.85;}
 
-  /* ---- Modal de cobro (Pagar) ---- */
   #modal-pago,#modal-cierre{
     position:fixed;inset:0;background:rgba(0,0,0,0.75);
     display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
@@ -240,7 +235,6 @@
   }
   .btn-confirmar-pago:disabled{background:#c8c8c8;cursor:not-allowed;}
 
-  /* ---- Modal de cierre de caja (resumen del día) ---- */
   #cierre-resumen .fila{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--gris);}
   #cierre-resumen .fila.total{font-size:18px;font-weight:800;color:var(--azul);margin-top:4px;margin-bottom:10px;}
   .lista-ventas{max-height:220px;overflow-y:auto;margin-top:10px;border-top:1px solid var(--linea);padding-top:8px;}
@@ -252,7 +246,6 @@
   .botones-cierre button.imprimir-cierre{background:var(--verde);}
   .botones-cierre button.cerrar-dia{background:var(--rojo);}
 
-  /* ---- DERECHA: Categorías (mosaico de color) + productos ---- */
   aside#panel-productos{
     width:46%;
     max-width:620px;
@@ -338,7 +331,6 @@
   .card .desc{font-size:10px;color:var(--gris);margin-top:2px;flex:1;}
   .card .precio{font-size:13px;font-weight:800;color:var(--naranja);margin-top:5px;}
 
-  /* MENU FOTO ORIGINAL (modal) */
   #modal-menu{
     position:fixed;inset:0;background:rgba(0,0,0,0.75);
     display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
@@ -353,11 +345,6 @@
     width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;
   }
 
-  /* TICKET (solo visible al imprimir) */
-  /* Las dos "hojas" de ticket (comanda y cierre de caja) están siempre
-     ocultas en pantalla, y solo se muestra la que tiene la clase .activo
-     en el momento de imprimir. Ocultamos TODO lo demás con display:none
-     (en vez de visibility, que dejaba hueco y descuadraba el ticket). */
   .ticket-imprimir{display:none;}
 
   @page{
@@ -408,10 +395,6 @@
     header .info-bar{display:none;}
   }
 
-  /* ===== DISEÑOS (4 combinaciones de color intercambiables) =====
-     El diseño 1 es el original. Los botones "🎨 Diseño" van
-     rotando el atributo data-tema del body, que sobreescribe
-     estas variables de color. ===== */
   body[data-tema="2"]{
     --azul:#1b4332; --azul-suave:#2d6a4f;
     --naranja:#d4a017; --naranja-suave:#f0dfa0;
@@ -436,11 +419,28 @@
     background:none;border:1px solid var(--naranja-suave);color:var(--naranja-suave);
     font-size:11px;padding:5px 10px;border-radius:5px;font-weight:700;
   }
-  header .mesa-box{flex-wrap:wrap;row-gap:6px;}
+#modal-dialogo{
+    position:fixed;inset:0;background:rgba(0,0,0,0.75);
+    display:none;align-items:center;justify-content:center;z-index:60;padding:20px;
+  }
+  #modal-dialogo.abierto{display:flex;}
+  #modal-dialogo .contenido{
+    background:white;border-radius:12px;max-width:380px;width:100%;padding:18px;
+  }
+  #modal-dialogo h2{margin:0 0 8px;font-size:16px;color:var(--azul);}
+  #modal-dialogo .ayuda{font-size:13px;color:var(--gris);margin-bottom:14px;line-height:1.4;}
+  #dialogo-input-box{margin-bottom:14px;}
+  #dialogo-input{
+    width:100%;padding:10px;font-size:16px;border:2px solid var(--linea);border-radius:8px;box-sizing:border-box;
+  }
+  .botones-dialogo{display:flex;gap:8px;}
+  .botones-dialogo button{
+    flex:1;padding:12px 6px;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;
+  }
+  #dialogo-btn-cancelar{background:var(--linea);color:var(--azul);}
+  #dialogo-btn-aceptar{background:var(--azul);color:white;}
 </style>
 </head>
-<!-- QZ Tray: puente entre esta web y la impresora/cajón. Requiere tener
-     instalado QZ Tray en el ordenador/tablet (https://qz.io/download/) -->
 <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js"></script>
 <body>
 
@@ -467,13 +467,26 @@
   </div>
 </header>
 
-<!-- Modal selector de mesas -->
 <div id="modal-mesas">
   <div class="contenido">
     <button class="cerrar" onclick="cerrarMesas()">✕</button>
     <h2 id="mesas-titulo">Elegir mesa</h2>
     <div class="ayuda" id="mesas-ayuda">Toca el número para la mesa completa, o A/B/C si la mesa está dividida. Las mesas con borde naranja tienen una comanda abierta.</div>
     <div class="mesas-grid" id="mesas-grid"></div>
+  </div>
+</div>
+
+<div id="modal-dialogo">
+  <div class="contenido">
+    <h2 id="dialogo-titulo"></h2>
+    <div class="ayuda" id="dialogo-mensaje"></div>
+    <div id="dialogo-input-box" style="display:none;">
+      <input type="text" id="dialogo-input">
+    </div>
+    <div class="botones-dialogo">
+      <button id="dialogo-btn-cancelar">Cancelar</button>
+      <button id="dialogo-btn-aceptar">Aceptar</button>
+    </div>
   </div>
 </div>
 
@@ -513,7 +526,6 @@
 
 </div>
 
-<!-- Modal con las fotos originales de la carta -->
 <div id="modal-menu">
   <div class="contenido">
     <button class="cerrar" onclick="cerrarMenuFotos()">✕</button>
@@ -522,7 +534,6 @@
   </div>
 </div>
 
-<!-- Modal de cobro (Pagar) -->
 <div id="modal-pago">
   <div class="contenido">
     <button class="cerrar" onclick="cerrarPago()">✕</button>
@@ -541,7 +552,6 @@
   </div>
 </div>
 
-<!-- Modal de cierre de caja (resumen del día) -->
 <div id="modal-cierre">
   <div class="contenido">
     <button class="cerrar" onclick="cerrarCierre()">✕</button>
@@ -555,7 +565,6 @@
   </div>
 </div>
 
-<!-- ZONA DE IMPRESIÓN: ticket de comanda / cobro -->
 <div id="ticket" class="ticket-imprimir">
   <h1>BAR KATMANDU</h1>
   <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
@@ -576,7 +585,6 @@
   <div class="centro">¡Gracias por su visita!</div>
 </div>
 
-<!-- ZONA DE IMPRESIÓN: cierre de caja del día -->
 <div id="ticket-cierre" class="ticket-imprimir">
   <h1>BAR KATMANDU</h1>
   <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
@@ -590,14 +598,7 @@
   <div class="centro">Fin del informe</div>
 </div>
 
-
 <script>
-/* ==========================================================
-   DATOS DE LA CARTA
-   (Editar aquí precios, nombres o añadir/quitar productos)
-   Las fotos viven en la carpeta img/ del repositorio,
-   junto a este index.html (misma estructura que en GitHub).
-   ========================================================== */
 const MENU = {
   "Cócteles": { color:"#c0392b", foto:"img/cocktails.jpg", items:[
     {n:"Screw Driver", d:"Vodka orange", p:6.90},
@@ -680,13 +681,59 @@ const MENU = {
 };
 
 let categoriaActual = Object.keys(MENU)[0];
-let carrito = []; // {n, p, qty}
+let carrito = [];
 
-/* ==========================================================
-   MESAS
-   Cada mesa puede tener sub-divisiones (A/B/C) para cuando se
-   junta o separa. Edita aquí el número de mesas y sus letras.
-   ========================================================== */
+let _resolverDialogo = null;
+
+function _abrirDialogo(titulo, mensaje, tipo, valorInicial){
+  return new Promise(resolve=>{
+    _resolverDialogo = resolve;
+    document.getElementById('dialogo-titulo').textContent = titulo;
+    document.getElementById('dialogo-mensaje').textContent = mensaje;
+    const inputBox = document.getElementById('dialogo-input-box');
+    const input = document.getElementById('dialogo-input');
+    const btnCancelar = document.getElementById('dialogo-btn-cancelar');
+    const btnAceptar = document.getElementById('dialogo-btn-aceptar');
+    if(tipo==='prompt'){
+      inputBox.style.display = 'block';
+      input.value = valorInicial || '';
+    } else {
+      inputBox.style.display = 'none';
+    }
+    btnCancelar.style.display = tipo==='aviso' ? 'none' : 'block';
+    btnAceptar.textContent = tipo==='aviso' ? 'Entendido' : 'Aceptar';
+    document.getElementById('modal-dialogo').classList.add('abierto');
+    if(tipo==='prompt') setTimeout(()=> input.focus(), 50);
+  });
+}
+
+function _cerrarDialogo(valor){
+  document.getElementById('modal-dialogo').classList.remove('abierto');
+  if(_resolverDialogo){ _resolverDialogo(valor); _resolverDialogo = null; }
+}
+
+document.getElementById('dialogo-btn-cancelar').onclick = ()=> _cerrarDialogo(null);
+document.getElementById('dialogo-btn-aceptar').onclick = ()=>{
+  if(document.getElementById('dialogo-input-box').style.display==='block'){
+    _cerrarDialogo(document.getElementById('dialogo-input').value);
+  } else {
+    _cerrarDialogo(true);
+  }
+};
+document.getElementById('dialogo-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('dialogo-btn-aceptar').click();
+});
+
+function mostrarAviso(mensaje, titulo){
+  return _abrirDialogo(titulo||'Aviso', mensaje, 'aviso');
+}
+function pedirConfirmacion(mensaje, titulo){
+  return _abrirDialogo(titulo||'Confirmar', mensaje, 'confirmar').then(v=> v===true);
+}
+function pedirTexto(mensaje, valorInicial, titulo){
+  return _abrirDialogo(titulo||'', mensaje, 'prompt', valorInicial);
+}
+
 const MESAS = [
   {n:1, subs:['A','B']},
   {n:2, subs:['A','B']},
@@ -701,11 +748,6 @@ const MESAS = [
 let mesaActual = 'Barra';
 let comandasPorMesa = { 'Barra': [] };
 
-/* ---- registro de ventas del día (para el cierre de caja) ----
-   Se guarda en el propio dispositivo. Cada vez que se cobra una
-   comanda con "Pagar" se añade una línea aquí con hora, mesa,
-   método de pago (efectivo/tarjeta), total y cambio dado.
-   Al cambiar de día se reinicia solo. ---- */
 let ventasDia = [];
 
 function fechaHoyISO(){
@@ -718,7 +760,6 @@ function cargarVentasDia(){
     try{ ventasDia = JSON.parse(localStorage.getItem('katmandu_ventas_dia')||'[]'); }
     catch(e){ ventasDia = []; }
   } else {
-    // es un día distinto al de la última venta guardada: empezamos de cero
     ventasDia = [];
     localStorage.setItem('katmandu_ventas_fecha', fechaHoyISO());
     localStorage.setItem('katmandu_ventas_dia', '[]');
@@ -733,9 +774,6 @@ function registrarVenta(datos){
   guardarVentasDia();
 }
 
-/* ---- persistencia: guardamos las comandas en el propio dispositivo,
-   así un refresco de página o un cierre accidental del navegador
-   no borra los pedidos en curso ---- */
 function guardarEstado(){
   localStorage.setItem('katmandu_comandas', JSON.stringify(comandasPorMesa));
   localStorage.setItem('katmandu_mesa_actual', mesaActual);
@@ -753,8 +791,6 @@ function cargarEstado(){
 
 function claveMesa(n, sub){ return sub ? (n+sub) : String(n); }
 
-// Si modoMover está activo, tocar una mesa en el selector no cambia de
-// vista: mueve la comanda actual a esa mesa (ver abrirMoverTicket).
 let modoMover = false;
 
 function renderMesas(){
@@ -763,7 +799,6 @@ function renderMesas(){
 
   const accion = modoMover ? moverComandaAMesa : seleccionarMesa;
 
-  // Opción "Barra / Para llevar" (sin número)
   const itemBarra = document.createElement('div');
   itemBarra.className = 'mesa-item';
   const ocupBarra = (comandasPorMesa['Barra']||[]).length>0;
@@ -796,7 +831,6 @@ function renderMesas(){
 }
 
 function seleccionarMesa(key){
-  // guardamos la comanda de la mesa anterior antes de cambiar
   comandasPorMesa[mesaActual] = carrito;
   mesaActual = key;
   carrito = comandasPorMesa[key] || [];
@@ -820,11 +854,8 @@ function cerrarMesas(){
   document.getElementById('modal-mesas').classList.remove('abierto');
 }
 
-/* ---------- Mover ticket (cuando un cliente cambia de mesa) ----------
-   Traslada lo que lleva pedido la mesa actual a otra mesa, sumando las
-   cantidades si en la mesa de destino ya había algo pedido. */
-function abrirMoverTicket(){
-  if(carrito.length===0){ alert('No hay comanda que mover en esta mesa.'); return; }
+async function abrirMoverTicket(){
+  if(carrito.length===0){ await mostrarAviso('No hay comanda que mover en esta mesa.'); return; }
   modoMover = true;
   document.getElementById('mesas-titulo').textContent = '¿A qué mesa se mueve la comanda?';
   document.getElementById('mesas-ayuda').textContent = 'Toca la mesa a la que se ha cambiado el cliente. Se llevará todo lo que lleva pedido en "' + (mesaActual==='Barra'?'Barra':'Mesa '+mesaActual) + '".';
@@ -832,8 +863,8 @@ function abrirMoverTicket(){
   document.getElementById('modal-mesas').classList.add('abierto');
 }
 
-function moverComandaAMesa(destino){
-  if(destino===mesaActual){ alert('Ya estás en esa mesa.'); modoMover=false; cerrarMesas(); return; }
+async function moverComandaAMesa(destino){
+  if(destino===mesaActual){ await mostrarAviso('Ya estás en esa mesa.'); modoMover=false; cerrarMesas(); return; }
   const origen = mesaActual;
   const comandaOrigen = comandasPorMesa[origen] || [];
   if(comandaOrigen.length===0){ modoMover=false; cerrarMesas(); return; }
@@ -841,7 +872,8 @@ function moverComandaAMesa(destino){
   const comandaDestino = comandasPorMesa[destino] || [];
   if(comandaDestino.length>0){
     const destinoTexto = destino==='Barra' ? 'Barra' : ('Mesa '+destino);
-    if(!confirm('"'+destinoTexto+'" ya tiene una comanda abierta. ¿Sumar los productos a lo que ya hay pedido allí?')) return;
+    const ok = await pedirConfirmacion(destinoTexto+' ya tiene una comanda abierta. ¿Sumar los productos a lo que ya hay pedido allí?');
+    if(!ok) return;
   }
 
   comandaOrigen.forEach(item=>{
@@ -863,7 +895,6 @@ function moverComandaAMesa(destino){
   cerrarMesas();
 }
 
-/* ---------- construir navegación (mosaico de categorías) ---------- */
 const catsNav = document.getElementById('cats');
 Object.keys(MENU).forEach(cat=>{
   const b = document.createElement('button');
@@ -875,7 +906,6 @@ Object.keys(MENU).forEach(cat=>{
 });
 
 function render(){
-  // mosaico activo
   [...catsNav.children].forEach(b=> b.classList.toggle('active', b.dataset.cat===categoriaActual));
 
   document.getElementById('titulo-categoria').textContent = categoriaActual;
@@ -897,17 +927,17 @@ function render(){
   });
 }
 
-function agregarAlCarrito(item){
+async function agregarAlCarrito(item){
   let nombre = item.n;
   let precio = item.p;
   if(item.editable){
-    const desc = prompt(`"${item.n}" — describe qué es (opcional, ej: marca o tipo):`, "");
+    const desc = await pedirTexto(`"${item.n}" — describe qué es (opcional, ej: marca o tipo):`, "");
     if(desc===null) return;
     if(desc.trim()!=='') nombre = item.n + ' - ' + desc.trim();
-    const val = prompt(`Precio para "${nombre}" (€):`, "");
+    const val = await pedirTexto(`Precio para "${nombre}" (€):`, "");
     if(val===null) return;
     precio = parseFloat(val.replace(',','.'));
-    if(isNaN(precio)||precio<0){ alert('Precio no válido'); return; }
+    if(isNaN(precio)||precio<0){ await mostrarAviso('Precio no válido'); return; }
   }
   const existente = carrito.find(c=> c.n===nombre && c.p===precio);
   if(existente){ existente.qty++; }
@@ -915,9 +945,6 @@ function agregarAlCarrito(item){
   renderCarrito();
 }
 
-// Botón "➕ Extra": para cualquier cosa que no esté en la carta
-// (algo que se ha comido de más, un encargo especial, etc.).
-// Siempre visible arriba de la comanda, sin depender de la categoría.
 function agregarExtra(){
   agregarAlCarrito({n:"Extra", p:0, editable:true});
 }
@@ -933,8 +960,8 @@ function borrarLinea(idx){
   renderCarrito();
 }
 
-function vaciarCarrito(){
-  if(carrito.length && !confirm('¿Vaciar toda la comanda?')) return;
+async function vaciarCarrito(){
+  if(carrito.length && !(await pedirConfirmacion('¿Vaciar toda la comanda?'))) return;
   carrito = [];
   renderCarrito();
 }
@@ -942,7 +969,6 @@ function vaciarCarrito(){
 function cancelarComanda(){
   vaciarCarrito();
 }
-
 
 function renderCarrito(){
   const lista = document.getElementById('lista-carrito');
@@ -974,15 +1000,11 @@ function renderCarrito(){
   document.getElementById('btn-imprimir').disabled = carrito.length===0;
   document.getElementById('btn-pagar').disabled = carrito.length===0;
 
-  // mantenemos guardada la comanda de esta mesa
   comandasPorMesa[mesaActual] = carrito;
   guardarEstado();
 }
 
-/* ---------- reloj e info de cabecera ---------- */
 function verNumeroTicketActual(){
-  // "número que le tocaría" al próximo ticket, sin gastarlo todavía
-  // (se gasta de verdad solo al cobrar, en siguienteNumeroTicket)
   return parseInt(localStorage.getItem('katmandu_ticket_num')||'0',10) + 1;
 }
 function actualizarInfoBar(){
@@ -992,16 +1014,12 @@ function actualizarInfoBar(){
 }
 setInterval(actualizarInfoBar, 1000);
 
-/* ---------- ticket / impresión ---------- */
 function siguienteNumeroTicket(){
   let n = parseInt(localStorage.getItem('katmandu_ticket_num')||'0',10) + 1;
   localStorage.setItem('katmandu_ticket_num', n);
   return n;
 }
 
-// Rellena el ticket de comanda (id="ticket") con las líneas actuales del
-// carrito. pagoInfo es opcional: si viene (al cobrar) añade método de
-// pago, importe entregado y cambio al pie del ticket.
 function construirTicketComanda(mesaTexto, num, pagoInfo){
   const ahora = new Date();
   document.getElementById('tk-fecha').textContent = ahora.toLocaleDateString('es-ES') + '  ' + ahora.toLocaleTimeString('es-ES');
@@ -1038,8 +1056,6 @@ function construirTicketComanda(mesaTexto, num, pagoInfo){
   }
 }
 
-// Botón "Imprimir": copia para el cliente ANTES de cobrar.
-// No consume número de ticket definitivo ni borra la comanda.
 function imprimirTicketCliente(){
   if(carrito.length===0) return;
   const mesaTexto = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
@@ -1048,13 +1064,10 @@ function imprimirTicketCliente(){
   window.print();
 }
 
-// tras imprimir cualquier ticket, quitamos la clase "activo" para que
-// la próxima vez solo se muestre el ticket que toque
 window.onafterprint = function(){
   document.querySelectorAll('.ticket-imprimir.activo').forEach(el=> el.classList.remove('activo'));
 };
 
-/* ---------- Pagar (cobro): efectivo / tarjeta + cambio ---------- */
 let metodoSeleccionado = null;
 
 function abrirPago(){
@@ -1104,16 +1117,6 @@ document.getElementById('input-recibido').addEventListener('input', ()=>{
   }
 });
 
-/* ---------- Apertura del cajón portamonedas (impresora en red + QZ Tray) ----------
-   Requisitos:
-   1) Tener instalado QZ Tray en el ordenador/tablet donde se abre esta web:
-      https://qz.io/download/  (queda funcionando en segundo plano)
-   2) Que la impresora esté dada de alta en el sistema operativo (Windows/Mac)
-      con la IP de tu impresora, y poner aquí ABAJO el nombre EXACTO con el
-      que aparece en la lista de impresoras de tu ordenador.
-   La primera vez que se use, QZ Tray mostrará un aviso de seguridad pidiendo
-   permitir la conexión: hay que darle a "Allow/Permitir" (y puede marcarse
-   "recordar" para que no vuelva a preguntar). ---- */
 const NOMBRE_IMPRESORA_CAJON = "POS-80C (copy 1)";
 
 function abrirCajonQZ(){
@@ -1125,7 +1128,6 @@ function abrirCajonQZ(){
   listo
     .then(()=> qz.configs.create(NOMBRE_IMPRESORA_CAJON))
     .then(config=>{
-      // ESC p 0 25 250 -> pulso al pin 2 del conector RJ11 del cajón
       const abrirPin2 = '\x1B\x70\x00\x19\xFA';
       return qz.print(config, [abrirPin2]);
     })
@@ -1174,7 +1176,6 @@ function confirmarPago(){
   renderCarrito();
 }
 
-/* ---------- Cierre de caja (resumen del día) ---------- */
 function abrirCierre(){
   cargarVentasDia();
   renderCierre();
@@ -1227,22 +1228,20 @@ function imprimirCierre(){
   window.print();
 }
 
-function cerrarDia(){
-  if(!confirm('¿Cerrar el día y borrar este resumen de ventas? No se puede deshacer.')) return;
+async function cerrarDia(){
+  if(!(await pedirConfirmacion('¿Cerrar el día y borrar este resumen de ventas? No se puede deshacer.'))) return;
   ventasDia = [];
   guardarVentasDia();
   renderCierre();
 }
 
-/* ---------- modal carta escaneada ---------- */
 function abrirMenuFotos(){ document.getElementById('modal-menu').classList.add('abierto'); }
 function cerrarMenuFotos(){ document.getElementById('modal-menu').classList.remove('abierto'); }
 
-/* ---------- Pantalla completa ---------- */
 function toggleFullscreen(){
   if(!document.fullscreenElement){
     document.documentElement.requestFullscreen().catch(()=>{
-      alert('El navegador ha bloqueado la pantalla completa. Puede activarse desde el propio navegador.');
+      mostrarAviso('El navegador ha bloqueado la pantalla completa. Puede activarse desde el propio navegador.');
     });
   } else {
     document.exitFullscreen();
@@ -1253,9 +1252,6 @@ document.addEventListener('fullscreenchange', ()=>{
   btn.textContent = document.fullscreenElement ? '🗗 Salir de pantalla completa' : '⛶ Pantalla completa';
 });
 
-/* ---------- Diseño (4 combinaciones de color) ----------
-   Cada toque va rotando entre los 4 diseños. Se guarda en el propio
-   dispositivo para que no haya que elegirlo cada vez que se abre. */
 const TOTAL_DISENOS = 4;
 let disenoActual = parseInt(localStorage.getItem('katmandu_diseno')||'1', 10);
 function aplicarDiseno(n){
