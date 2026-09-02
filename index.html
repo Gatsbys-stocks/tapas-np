@@ -246,6 +246,45 @@
   .botones-cierre button.imprimir-cierre{background:var(--verde);}
   .botones-cierre button.cerrar-dia{background:var(--rojo);}
 
+  #modal-reservas{
+    position:fixed;inset:0;background:rgba(0,0,0,0.75);
+    display:none;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  #modal-reservas.abierto{display:flex;}
+  #modal-reservas .contenido{
+    background:white;border-radius:12px;max-width:640px;width:100%;max-height:90%;overflow:auto;padding:18px;position:relative;
+  }
+  #modal-reservas h2{margin:0 0 4px;font-size:17px;color:var(--azul);}
+  #modal-reservas .ayuda{font-size:12px;color:var(--gris);margin-bottom:14px;}
+  #modal-reservas .cerrar{
+    position:absolute;top:10px;right:12px;background:var(--rojo);color:white;border:none;
+    width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;
+  }
+  .filtros-reservas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .filtros-reservas button{
+    background:var(--crema);border:1px solid var(--linea);color:var(--azul);
+    padding:6px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;
+  }
+  .filtros-reservas button.activo{background:var(--naranja);border-color:var(--naranja);color:white;}
+  .reserva-item{
+    background:var(--crema);border:1px solid var(--linea);border-radius:10px;
+    padding:12px 14px;margin-bottom:10px;
+  }
+  .reserva-item .fila-titulo{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .reserva-item h3{font-size:14.5px;margin:0;color:var(--azul);}
+  .etiqueta-reserva{font-size:10.5px;padding:3px 9px;border-radius:20px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;}
+  .etiqueta-reserva.pendiente{background:#f5c98f;color:#7a4a10;}
+  .etiqueta-reserva.confirmada{background:#c9e6d3;color:#1f5c39;}
+  .etiqueta-reserva.cancelada{background:#f3c6bd;color:#8a2c1d;}
+  .reserva-item .detalle{font-size:12.5px;color:var(--gris);margin-top:6px;line-height:1.5;}
+  .reserva-item .acciones-reserva{display:flex;gap:8px;margin-top:10px;}
+  .reserva-item .acciones-reserva button{
+    flex:1;padding:8px 6px;border-radius:6px;font-size:12px;font-weight:800;cursor:pointer;border:none;color:white;
+  }
+  .btn-llegado{background:var(--verde);}
+  .btn-no-llegado{background:var(--rojo);}
+  #reservas-estado{font-size:12px;color:var(--gris);margin-top:10px;}
+
   aside#panel-productos{
     width:46%;
     max-width:620px;
@@ -446,7 +485,7 @@
 
   <div class="mesa-box">
     <button class="btn-carta" onclick="abrirCajonQZ()">🗄️ Abrir caja</button>
-    <button class="btn-carta" onclick="window.open('https://tapas-np-wed.onrender.com/caja-reservas.html','_blank')">📅 Reservas</button>
+    <button class="btn-carta" onclick="abrirReservas()">📅 Reservas</button>
     <button class="btn-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()">⛶ Pantalla completa</button>
     <button class="btn-diseno" onclick="cambiarDiseno()">🎨 Diseño</button>
     <button class="btn-carta" onclick="abrirCierre()">📊 Cierre del día</button>
@@ -541,6 +580,22 @@
       <button type="button" class="imprimir-cierre" onclick="imprimirCierre()">🖨️ Imprimir cierre</button>
       <button type="button" class="cerrar-dia" onclick="cerrarDia()">🗑️ Cerrar día</button>
     </div>
+  </div>
+</div>
+
+<div id="modal-reservas">
+  <div class="contenido">
+    <button class="cerrar" onclick="cerrarReservas()">✕</button>
+    <h2>Reservas de la web</h2>
+    <div class="ayuda">Reservas hechas desde la web del bar.</div>
+    <div class="filtros-reservas">
+      <button data-filtro="todas" class="activo">Todas</button>
+      <button data-filtro="pendiente">Pendientes</button>
+      <button data-filtro="confirmada">Llegado</button>
+      <button data-filtro="cancelada">No llegado</button>
+    </div>
+    <div id="lista-reservas-tpv"></div>
+    <div id="reservas-estado"></div>
   </div>
 </div>
 
@@ -1163,6 +1218,107 @@ function abrirCierre(){
 function cerrarCierre(){
   document.getElementById('modal-cierre').classList.remove('abierto');
 }
+
+// ---------- Reservas de la web ----------
+const RESERVAS_API_BASE = 'https://tapas-np-wed.onrender.com';
+const RESERVAS_ETIQUETAS = { pendiente:'Pendiente', confirmada:'Llegado', cancelada:'No llegado' };
+let reservasTPV = [];
+let filtroReservasTPV = 'todas';
+
+function abrirReservas(){
+  document.getElementById('modal-reservas').classList.add('abierto');
+  cargarReservasTPV();
+}
+function cerrarReservas(){
+  document.getElementById('modal-reservas').classList.remove('abierto');
+}
+
+function formatearFechaReserva(fecha){
+  const [anio, mes, dia] = fecha.split('-');
+  return `${dia}/${mes}/${anio}`;
+}
+
+async function cargarReservasTPV(){
+  const estadoEl = document.getElementById('reservas-estado');
+  estadoEl.textContent = 'Cargando reservas…';
+  try{
+    const respuesta = await fetch(`${RESERVAS_API_BASE}/api/reservas`);
+    if(!respuesta.ok) throw new Error('Respuesta no válida del servidor');
+    reservasTPV = await respuesta.json();
+    estadoEl.textContent = '';
+    renderReservasTPV();
+  }catch(error){
+    console.error(error);
+    estadoEl.textContent = 'No se han podido cargar las reservas.';
+  }
+}
+
+function renderReservasTPV(){
+  const lista = document.getElementById('lista-reservas-tpv');
+  const filtradas = filtroReservasTPV==='todas'
+    ? reservasTPV
+    : reservasTPV.filter(r=> r.estado===filtroReservasTPV);
+
+  if(filtradas.length===0){
+    lista.innerHTML = '<div class="ayuda">No hay reservas en esta categoría.</div>';
+    return;
+  }
+
+  const ordenadas = [...filtradas].sort((a,b)=> new Date(b.creadaEn) - new Date(a.creadaEn));
+
+  lista.innerHTML = ordenadas.map(r => `
+    <div class="reserva-item" data-id="${r.id}">
+      <div class="fila-titulo">
+        <h3>${r.nombre} · ${r.personas} pers.</h3>
+        <span class="etiqueta-reserva ${r.estado}">${RESERVAS_ETIQUETAS[r.estado] || r.estado}</span>
+      </div>
+      <div class="detalle">
+        ${formatearFechaReserva(r.fecha)} a las ${r.hora}<br>
+        Tel: ${r.telefono} · Email: ${r.email || '—'}
+        ${r.comentarios ? `<br>Comentarios: ${r.comentarios}` : ''}
+      </div>
+      ${r.estado==='pendiente' ? `
+        <div class="acciones-reserva">
+          <button class="btn-llegado" data-accion="confirmada">Llegado</button>
+          <button class="btn-no-llegado" data-accion="cancelada">No llegado</button>
+        </div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function cambiarEstadoReservaTPV(id, nuevoEstado){
+  const estadoEl = document.getElementById('reservas-estado');
+  try{
+    const respuesta = await fetch(`${RESERVAS_API_BASE}/api/reservas/${id}`, {
+      method:'PATCH',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ estado: nuevoEstado }),
+    });
+    if(!respuesta.ok) throw new Error('No se pudo actualizar la reserva');
+    await cargarReservasTPV();
+  }catch(error){
+    console.error(error);
+    estadoEl.textContent = 'No se ha podido actualizar esa reserva.';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.filtros-reservas button').forEach(boton => {
+    boton.addEventListener('click', () => {
+      document.querySelectorAll('.filtros-reservas button').forEach(b=> b.classList.remove('activo'));
+      boton.classList.add('activo');
+      filtroReservasTPV = boton.dataset.filtro;
+      renderReservasTPV();
+    });
+  });
+
+  document.getElementById('lista-reservas-tpv').addEventListener('click', evento => {
+    const boton = evento.target.closest('button[data-accion]');
+    if(!boton) return;
+    const tarjeta = evento.target.closest('.reserva-item');
+    cambiarEstadoReservaTPV(tarjeta.dataset.id, boton.dataset.accion);
+  });
+});
 
 function calcularTotalesDia(){
   const totalEfectivo = ventasDia.filter(v=>v.metodo==='efectivo').reduce((s,v)=>s+v.total,0);
