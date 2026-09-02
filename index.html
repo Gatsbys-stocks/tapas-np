@@ -1434,8 +1434,7 @@ function imprimirCierre(){
 }
 
 function ocultarReservasLlegadasYNoLlegadas(){
-  const hoy = obtenerFechaHoyStr();
-  reservasTPV.filter(r=> r.fecha===hoy && (r.estado==='confirmada' || r.estado==='cancelada'))
+  reservasTPV.filter(r=> r.estado==='confirmada' || r.estado==='cancelada')
     .forEach(r=>{
       const id = String(r.id);
       if(!reservasOcultas.includes(id)) reservasOcultas.push(id);
