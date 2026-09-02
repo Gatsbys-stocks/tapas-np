@@ -1226,6 +1226,18 @@ const RESERVAS_ETIQUETAS = { pendiente:'Pendiente', confirmada:'Llegado', cancel
 let reservasTPV = [];
 let filtroReservasTPV = 'pendiente';
 
+function cargarReservasOcultas(){
+  try{
+    return JSON.parse(localStorage.getItem('katmandu_reservas_ocultas') || '[]');
+  }catch(e){
+    return [];
+  }
+}
+function guardarReservasOcultas(lista){
+  localStorage.setItem('katmandu_reservas_ocultas', JSON.stringify(lista));
+}
+let reservasOcultas = cargarReservasOcultas();
+
 function abrirReservas(){
   filtroReservasTPV = 'pendiente';
   document.querySelectorAll('.filtros-reservas button').forEach(b=>{
@@ -1257,7 +1269,13 @@ async function cargarReservasTPV(){
   try{
     const respuesta = await fetch(`${RESERVAS_API_BASE}/api/reservas`);
     if(!respuesta.ok) throw new Error('Respuesta no válida del servidor');
-    reservasTPV = await respuesta.json();
+    let todas = await respuesta.json();
+    // Depurar la lista de ocultas: solo conservar ids que sigan existiendo
+    const idsActuales = new Set(todas.map(r=>String(r.id)));
+    reservasOcultas = reservasOcultas.filter(id=> idsActuales.has(String(id)));
+    guardarReservasOcultas(reservasOcultas);
+    // No mostrar en el TPV las que ya se ocultaron al cerrar el día
+    reservasTPV = todas.filter(r=> !reservasOcultas.includes(String(r.id)));
     estadoEl.textContent = '';
     renderReservasTPV();
   }catch(error){
@@ -1415,24 +1433,21 @@ function imprimirCierre(){
   window.print();
 }
 
-async function borrarReservasLlegadasYNoLlegadas(){
+function ocultarReservasLlegadasYNoLlegadas(){
   const hoy = obtenerFechaHoyStr();
-  const aBorrar = reservasTPV.filter(r=> r.fecha===hoy && (r.estado==='confirmada' || r.estado==='cancelada'));
-  for(const r of aBorrar){
-    try{
-      const respuesta = await fetch(`${RESERVAS_API_BASE}/api/reservas/${r.id}`, { method:'DELETE' });
-      if(!respuesta.ok) throw new Error('Respuesta no válida al borrar la reserva '+r.id);
-    }catch(error){
-      console.error('No se pudo borrar la reserva', r.id, error);
-    }
-  }
+  reservasTPV.filter(r=> r.fecha===hoy && (r.estado==='confirmada' || r.estado==='cancelada'))
+    .forEach(r=>{
+      const id = String(r.id);
+      if(!reservasOcultas.includes(id)) reservasOcultas.push(id);
+    });
+  guardarReservasOcultas(reservasOcultas);
 }
 
 async function cerrarDia(){
-  if(!(await pedirConfirmacion('¿Cerrar el día y borrar este resumen de ventas? Las reservas llegadas y no llegadas de hoy también se borrarán; las pendientes se mantienen. No se puede deshacer.'))) return;
+  if(!(await pedirConfirmacion('¿Cerrar el día y borrar este resumen de ventas? Las reservas llegadas y no llegadas de hoy dejarán de verse en el TPV; las pendientes se mantienen. No se puede deshacer.'))) return;
   ventasDia = [];
   guardarVentasDia();
-  await borrarReservasLlegadasYNoLlegadas();
+  ocultarReservasLlegadasYNoLlegadas();
   await cargarReservasTPV();
   renderCierre();
 }
