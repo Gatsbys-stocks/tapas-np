@@ -589,10 +589,10 @@
     <h2>Reservas de la web</h2>
     <div class="ayuda">Reservas hechas desde la web del bar.</div>
     <div class="filtros-reservas">
-      <button data-filtro="pendiente">Pendientes</button>
+      <button data-filtro="pendiente" class="activo">Pendientes</button>
       <button data-filtro="confirmada">Llegado</button>
       <button data-filtro="cancelada">No llegado</button>
-      <button data-filtro="todas" class="activo">Todas</button>
+      <button data-filtro="todas">Todas</button>
     </div>
     <div id="lista-reservas-tpv"></div>
     <div id="reservas-estado"></div>
@@ -1210,8 +1210,9 @@ function confirmarPago(){
   renderCarrito();
 }
 
-function abrirCierre(){
+async function abrirCierre(){
   cargarVentasDia();
+  await cargarReservasTPV();
   renderCierre();
   document.getElementById('modal-cierre').classList.add('abierto');
 }
@@ -1223,11 +1224,23 @@ function cerrarCierre(){
 const RESERVAS_API_BASE = 'https://tapas-np-wed.onrender.com';
 const RESERVAS_ETIQUETAS = { pendiente:'Pendiente', confirmada:'Llegado', cancelada:'No llegado' };
 let reservasTPV = [];
-let filtroReservasTPV = 'todas';
+let filtroReservasTPV = 'pendiente';
 
 function abrirReservas(){
+  filtroReservasTPV = 'pendiente';
+  document.querySelectorAll('.filtros-reservas button').forEach(b=>{
+    b.classList.toggle('activo', b.dataset.filtro==='pendiente');
+  });
   document.getElementById('modal-reservas').classList.add('abierto');
   cargarReservasTPV();
+}
+
+function obtenerFechaHoyStr(){
+  const ahora = new Date();
+  const anio = ahora.getFullYear();
+  const mes = String(ahora.getMonth()+1).padStart(2,'0');
+  const dia = String(ahora.getDate()).padStart(2,'0');
+  return `${anio}-${mes}-${dia}`;
 }
 function cerrarReservas(){
   document.getElementById('modal-reservas').classList.remove('abierto');
@@ -1344,6 +1357,21 @@ function renderCierre(){
   } else {
     html += '<div class="lista-ventas">Todavía no se ha cobrado ninguna comanda hoy.</div>';
   }
+
+  const hoy = obtenerFechaHoyStr();
+  const reservasHoy = reservasTPV.filter(r=> r.fecha===hoy);
+  const llegados = reservasHoy.filter(r=> r.estado==='confirmada');
+  const noLlegados = reservasHoy.filter(r=> r.estado==='cancelada');
+
+  html += `<div class="fila" style="margin-top:10px;"><span>Reservas llegadas</span><span>${llegados.length}</span></div>`;
+  html += `<div class="fila"><span>Reservas no llegadas</span><span>${noLlegados.length}</span></div>`;
+  if(llegados.length || noLlegados.length){
+    html += '<div class="lista-ventas">';
+    llegados.forEach(r=>{ html += `<div class="linea-venta">✅ ${r.nombre} · ${r.personas} pers. · ${r.hora}</div>`; });
+    noLlegados.forEach(r=>{ html += `<div class="linea-venta">❌ ${r.nombre} · ${r.personas} pers. · ${r.hora}</div>`; });
+    html += '</div>';
+  }
+
   document.getElementById('cierre-resumen').innerHTML = html;
 }
 
@@ -1351,6 +1379,29 @@ function imprimirCierre(){
   const t = calcularTotalesDia();
   const ahora = new Date();
   document.getElementById('tkc-fecha').textContent = ahora.toLocaleDateString('es-ES') + '  ' + ahora.toLocaleTimeString('es-ES');
+
+  const hoy = obtenerFechaHoyStr();
+  const reservasHoy = reservasTPV.filter(r=> r.fecha===hoy);
+  const llegados = reservasHoy.filter(r=> r.estado==='confirmada');
+  const noLlegados = reservasHoy.filter(r=> r.estado==='cancelada');
+
+  let filasReservas = '';
+  if(llegados.length || noLlegados.length){
+    filasReservas += '<hr><div class="centro"><b>Reservas del día</b></div>';
+    if(llegados.length){
+      filasReservas += '<div style="margin-top:4px;">Han venido:</div>';
+      llegados.forEach(r=>{
+        filasReservas += `<div>· ${r.nombre} (${r.personas}p) ${r.hora}</div>`;
+      });
+    }
+    if(noLlegados.length){
+      filasReservas += '<div style="margin-top:4px;">No han venido:</div>';
+      noLlegados.forEach(r=>{
+        filasReservas += `<div>· ${r.nombre} (${r.personas}p) ${r.hora}</div>`;
+      });
+    }
+  }
+
   document.getElementById('tkc-resumen').innerHTML = `
     <table>
       <tr><td>Tickets cobrados</td><td class="der">${t.numTickets}</td></tr>
@@ -1358,15 +1409,31 @@ function imprimirCierre(){
       <tr><td>Tarjeta</td><td class="der">${t.totalTarjeta.toFixed(2)} €</td></tr>
       <tr class="grande"><td>TOTAL</td><td class="der">${t.totalGeneral.toFixed(2)} €</td></tr>
     </table>
+    ${filasReservas}
   `;
   document.getElementById('ticket-cierre').classList.add('activo');
   window.print();
 }
 
+async function borrarReservasLlegadasYNoLlegadas(){
+  const hoy = obtenerFechaHoyStr();
+  const aBorrar = reservasTPV.filter(r=> r.fecha===hoy && (r.estado==='confirmada' || r.estado==='cancelada'));
+  for(const r of aBorrar){
+    try{
+      const respuesta = await fetch(`${RESERVAS_API_BASE}/api/reservas/${r.id}`, { method:'DELETE' });
+      if(!respuesta.ok) throw new Error('Respuesta no válida al borrar la reserva '+r.id);
+    }catch(error){
+      console.error('No se pudo borrar la reserva', r.id, error);
+    }
+  }
+}
+
 async function cerrarDia(){
-  if(!(await pedirConfirmacion('¿Cerrar el día y borrar este resumen de ventas? No se puede deshacer.'))) return;
+  if(!(await pedirConfirmacion('¿Cerrar el día y borrar este resumen de ventas? Las reservas llegadas y no llegadas de hoy también se borrarán; las pendientes se mantienen. No se puede deshacer.'))) return;
   ventasDia = [];
   guardarVentasDia();
+  await borrarReservasLlegadasYNoLlegadas();
+  await cargarReservasTPV();
   renderCierre();
 }
 
