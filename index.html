@@ -1510,21 +1510,49 @@ const DATOS_FISCALES = {
   iva: 10            // hostelería: 10 % IVA incluido en todos los precios
 };
 
+// Impresora de tickets a la que va conectado el cajón. Si no se encuentra con
+// este nombre, se busca una que se llame parecido (POS / 80) o la predeterminada.
 const NOMBRE_IMPRESORA_CAJON = "POS-80C (copy 1)";
+let impresoraCajon = null;
 
-function abrirCajonQZ(){
+async function buscarImpresoraCajon(){
+  if(impresoraCajon) return impresoraCajon;
+  try{ impresoraCajon = await qz.printers.find(NOMBRE_IMPRESORA_CAJON); return impresoraCajon; }catch(e){}
+  try{
+    const todas = await qz.printers.find();
+    const lista = Array.isArray(todas) ? todas : [todas];
+    const parecida = lista.find(n=> /pos|80/i.test(n));
+    if(parecida){ impresoraCajon = parecida; return parecida; }
+  }catch(e){}
+  try{ impresoraCajon = await qz.printers.getDefault(); return impresoraCajon; }catch(e){}
+  throw new Error('sin-impresora');
+}
+
+async function abrirCajonQZ(){
   if(typeof qz === 'undefined'){
-    console.warn('QZ Tray no se ha podido cargar (¿sin conexión a internet?).');
-    return;
+    mostrarAviso('No se ha podido cargar QZ Tray. Comprueba que el ordenador tiene internet y recarga la página.', 'No se abre la caja');
+    return false;
   }
-  const listo = qz.websocket.isActive() ? Promise.resolve() : qz.websocket.connect();
-  listo
-    .then(()=> qz.configs.create(NOMBRE_IMPRESORA_CAJON))
-    .then(config=>{
-      const abrirPin2 = '\x1B\x70\x00\x19\xFA';
-      return qz.print(config, [abrirPin2]);
-    })
-    .catch(err=> console.error('No se pudo abrir el cajón:', err));
+  try{
+    if(!qz.websocket.isActive()){
+      try{ await qz.websocket.connect({retries:2, delay:1}); }
+      catch(e){ throw new Error('sin-qz'); }
+    }
+    const impresora = await buscarImpresoraCajon();
+    const config = qz.configs.create(impresora);
+    await qz.print(config, ['\x1B\x70\x00\x19\xFA']);   // pulso al cajón (pin 2)
+    return true;
+  }catch(err){
+    const txt = String((err && err.message) || err || '');
+    console.error('No se pudo abrir el cajón:', err);
+    let msg;
+    if(txt==='sin-qz') msg = 'QZ Tray no está abierto en este ordenador. Ábrelo (icono de la bandeja junto al reloj o desde el menú Inicio) y vuelve a pulsar «Abrir caja».';
+    else if(/block|denied|reject/i.test(txt)) msg = 'QZ Tray ha bloqueado esta web. En el icono de QZ Tray: Advanced → Site Manager, quita '+(location.hostname||'esta web')+' de «Blocked» y vuelve a pulsar; cuando pregunte, marca «Remember this decision» y pulsa «Allow».';
+    else if(txt==='sin-impresora') msg = 'No encuentro la impresora de tickets. Comprueba que está encendida y conectada.';
+    else msg = 'No se ha podido abrir la caja: ' + txt;
+    mostrarAviso(msg, 'No se abre la caja');
+    return false;
+  }
 }
 
 function confirmarPago(){
