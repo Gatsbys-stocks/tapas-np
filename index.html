@@ -173,6 +173,23 @@
   .item-carrito .nombre{font-size:13px;font-weight:700;line-height:1.2;}
   .item-carrito .nombre .sub{display:block;font-size:10.5px;font-weight:400;color:var(--gris);}
   .item-carrito .nombre .det{display:block;font-size:11.5px;font-weight:600;color:var(--azul);margin:2px 0 1px;line-height:1.3;}
+  #modal-descuento{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:56;padding:20px;}
+  #modal-descuento.abierto{display:flex;}
+  #modal-descuento .contenido{background:white;border-radius:12px;max-width:420px;width:100%;padding:18px;}
+  #modal-descuento h2{margin:0 0 4px;font-size:18px;color:var(--azul);}
+  .dto-tipos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 10px;}
+  .dto-tipos button{padding:13px 8px;border-radius:8px;border:2px solid var(--linea);background:var(--crema);font-size:15px;font-weight:800;color:var(--azul);cursor:pointer;}
+  .dto-tipos button.activa{background:var(--azul);border-color:var(--azul);color:white;}
+  #dto-valor{width:100%;padding:12px;font-size:20px;font-weight:700;border:2px solid var(--linea);border-radius:8px;box-sizing:border-box;}
+  #dto-previa{min-height:22px;margin:10px 0 12px;font-size:14px;color:var(--gris);}
+  #dto-previa.error{color:var(--rojo);font-weight:700;}
+  #modal-descuento .botones-dialogo{display:flex;gap:8px;}
+  #modal-descuento .botones-dialogo button{flex:1;padding:12px 6px;border:none;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;background:var(--linea);color:var(--azul);}
+  #dto-aplicar{background:var(--azul) !important;color:white !important;}
+  #dto-aplicar:disabled{opacity:.4;cursor:not-allowed;}
+  #dto-quitar{color:var(--rojo) !important;}
+  #totales .fila-descuento{color:var(--verde);font-weight:700;}
+  #btn-descuento.activo{background:var(--verde) !important;color:white !important;}
   #modal-menu{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:55;padding:20px;}
   #modal-menu.abierto{display:flex;}
   #modal-menu .contenido{background:white;border-radius:12px;max-width:760px;width:100%;max-height:92%;overflow:auto;padding:18px 18px 14px;}
@@ -436,6 +453,14 @@
       font-size:14px;
     }
     .ticket-imprimir.activo .tk-pago-info{margin-top:4px;font-size:14px;font-weight:700;}
+    .ticket-imprimir.activo .tk-tipo{font-size:15px;font-weight:800;letter-spacing:.5px;margin-bottom:4px;}
+    .ticket-imprimir.activo .tk-cabecera td{padding:1px 0;font-size:13px;}
+    .ticket-imprimir.activo .tk-cols{display:flex;justify-content:space-between;font-size:12px;border-bottom:1px solid #000;margin-bottom:5px;padding-bottom:2px;}
+    .ticket-imprimir.activo .tk-peq{font-size:11.5px;font-weight:600;}
+    .ticket-imprimir.activo .tk-iva{margin-top:6px;font-size:12px;}
+    .ticket-imprimir.activo .tk-iva th{font-weight:700;border-bottom:1px solid #000;padding:2px 0;text-align:left;}
+    .ticket-imprimir.activo .tk-iva th.der{text-align:right;}
+    .ticket-imprimir.activo .tk-iva td{padding:2px 0;}
   }
 
   @media (max-width:900px){
@@ -558,6 +583,24 @@
   </div>
 </div>
 
+<div id="modal-descuento">
+  <div class="contenido">
+    <h2>Descuento</h2>
+    <div class="ayuda" id="dto-ayuda">Elige si es en euros o en porcentaje y escribe la cantidad.</div>
+    <div class="dto-tipos">
+      <button type="button" data-dto-tipo="%">% Porcentaje</button>
+      <button type="button" data-dto-tipo="€">€ Euros</button>
+    </div>
+    <input type="number" id="dto-valor" step="0.01" min="0" inputmode="decimal" placeholder="Ej.: 10">
+    <div id="dto-previa"></div>
+    <div class="botones-dialogo">
+      <button type="button" id="dto-quitar">Quitar descuento</button>
+      <button type="button" id="dto-cancelar">Cancelar</button>
+      <button type="button" id="dto-aplicar">Aplicar</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-dialogo">
   <div class="contenido">
     <h2 id="dialogo-titulo"></h2>
@@ -580,6 +623,7 @@
       <div class="ticket-head-botones">
         <button onclick="agregarExtra()">➕ Extra</button>
         <button onclick="vaciarCarrito()">Vaciar</button>
+        <button id="btn-descuento" onclick="abrirDescuento()">🏷️ Descuento</button>
         <button class="btn-mover-ticket" onclick="abrirMoverTicket()">🔀 Mover mesa</button>
       </div>
     </div>
@@ -589,6 +633,8 @@
     <div id="lista-carrito"></div>
     <div id="totales">
       <div class="fila"><span>Artículos</span><span id="total-articulos">0</span></div>
+      <div class="fila" id="fila-subtotal" style="display:none"><span>Subtotal</span><span id="total-subtotal">0.00 €</span></div>
+      <div class="fila fila-descuento" id="fila-descuento" style="display:none"><span id="txt-descuento">Descuento</span><span id="total-descuento">0.00 €</span></div>
       <div class="fila total"><span>TOTAL</span><span id="total-precio">0.00 €</span></div>
       <div class="botones-fin">
         <button class="btn-fin cancelar" onclick="cancelarComanda()">✕ Cancelar</button>
@@ -656,27 +702,41 @@
 </div>
 
 <div id="ticket" class="ticket-imprimir">
-  <h1>BAR KATMANDU</h1>
-  <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
-  <div class="centro datos-local">Tel. 675 19 25 09</div>
-  <div class="centro" id="tk-fecha"></div>
+  <h1 id="tk-nombre-comercial">BAR KATMANDU</h1>
+  <div class="centro datos-local" id="tk-titular"></div>
+  <div class="centro datos-local" id="tk-nif"></div>
+  <div class="centro datos-local" id="tk-direccion"></div>
+  <div class="centro datos-local" id="tk-telefono"></div>
   <hr>
-  <div id="tk-mesa"></div>
-  <div id="tk-numero"></div>
+  <div class="centro tk-tipo" id="tk-tipo">FACTURA SIMPLIFICADA</div>
+  <table class="tk-cabecera">
+    <tr><td>Nº</td><td class="der" id="tk-numero"></td></tr>
+    <tr><td>Fecha</td><td class="der" id="tk-fecha"></td></tr>
+    <tr><td>Mesa</td><td class="der" id="tk-mesa"></td></tr>
+  </table>
   <hr>
+  <div class="tk-cols"><span>Ud Descripción</span><span>Importe</span></div>
   <div id="tk-lineas"></div>
   <hr>
   <table>
-    <tr><td>Artículos</td><td class="der" id="tk-articulos"></td></tr>
+    <tr id="tk-fila-subtotal"><td>Subtotal</td><td class="der" id="tk-subtotal"></td></tr>
+    <tr id="tk-fila-descuento"><td id="tk-txt-descuento">Descuento</td><td class="der" id="tk-descuento"></td></tr>
     <tr class="grande"><td>TOTAL</td><td class="der" id="tk-total"></td></tr>
+    <tr><td colspan="2" class="der tk-peq">(IVA incluido)</td></tr>
   </table>
+  <table class="tk-iva">
+    <tr><th>Tipo IVA</th><th class="der">Base</th><th class="der">Cuota</th><th class="der">Total</th></tr>
+    <tr><td id="tk-iva-tipo"></td><td class="der" id="tk-iva-base"></td><td class="der" id="tk-iva-cuota"></td><td class="der" id="tk-iva-total"></td></tr>
+  </table>
+  <div class="tk-peq">Artículos: <span id="tk-articulos"></span></div>
   <div id="tk-pago-info" class="tk-pago-info"></div>
   <hr>
-  <div class="centro">¡Gracias por su visita!</div>
+  <div class="centro" id="tk-pie">¡Gracias por su visita!</div>
 </div>
 
 <div id="ticket-cierre" class="ticket-imprimir">
   <h1>BAR KATMANDU</h1>
+  <div class="centro datos-local">Sudesh Kumar Shrestha · NIF Y5601194H</div>
   <div class="centro datos-local">C/ Torrent de l'Olla, 148 · Gràcia</div>
   <div class="centro datos-local">Tel. 675 19 25 09</div>
   <div class="centro">Cierre de caja</div>
@@ -755,12 +815,12 @@ const MENU = {
     {n:"Pork Chilly 🌶", d:"Cerdo con pimientos y chile dulce", p:10.95},
   ]},
   "Mo:Mo": { color:"#5a1d26", foto:"img/foto-momo.jpg", items:[
-    {n:"Mo:Mo (8u)", d:"Al vapor · pollo, cerdo o verduras", p:7.95},
-    {n:"Kothey Mo:Mo (8u)", d:"A la plancha", p:8.95},
-    {n:"Jhol Mo:Mo (8u)", d:"En caldo especial", p:10.50},
-    {n:"Fry Mo:Mo (8u)", d:"Fritos", p:10.50},
-    {n:"Piro Mo:Mo (8u) 🌶", d:"En salsa picante especial", p:10.50},
-    {n:"C. Mo:Mo (6u) 🌶", d:"Salteados, salsa agridulce picante", p:11.95},
+    {n:"Mo:Mo (8u)", d:"Al vapor · pollo, cerdo o verduras", p:7.95, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
+    {n:"Kothey Mo:Mo (8u)", d:"A la plancha", p:8.95, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
+    {n:"Jhol Mo:Mo (8u)", d:"En caldo especial", p:10.50, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
+    {n:"Fry Mo:Mo (8u)", d:"Fritos", p:10.50, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
+    {n:"Piro Mo:Mo (8u) 🌶", d:"En salsa picante especial", p:10.50, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
+    {n:"C. Mo:Mo (6u) 🌶", d:"Salteados, salsa agridulce picante", p:11.95, elegir:[{"nombre": "Relleno", "obligatorio": true, "opciones": ["Pollo", "Cerdo", "Verduras"]}]},
   ]},
   "Cordero": { color:"#8e3b2c", foto:"img/foto-cordero.jpg", items:[
     {n:"Cordero Curry", d:"Salsa estilo nepalí y cilantro", p:13.95},
@@ -797,7 +857,7 @@ const MENU = {
     {n:"Pork Curry", d:"Cerdo guisado estilo nepalí", p:11.95},
   ]},
   "Pasta / Noodles": { color:"#6b4f3a", foto:"img/thukpa.jpg", items:[
-    {n:"Nepali Noodles", d:"Fideos con pollo o verduras", p:8.50},
+    {n:"Nepali Noodles", d:"Fideos con pollo o verduras", p:8.50, elegir:[{"nombre": "Con", "obligatorio": true, "opciones": ["Pollo", "Verduras"]}]},
     {n:"Chowmein Pollo", p:8.95},
     {n:"Chowmein Cerdo", p:8.95},
     {n:"Chowmein Verduras", p:8.50},
@@ -807,8 +867,8 @@ const MENU = {
   "Postres": { color:"#94586a", foto:"img/postre.jpg", items:[
     {n:"Kheer", d:"Arroz con leche nepalí", p:5.50},
     {n:"Gajar ko Haluwa", d:"Pudin de zanahoria", p:5.50},
-    {n:"Helado", d:"Vainilla, chocolate, coco o mango", p:4.50},
-    {n:"Lassi", d:"Batido de yogur: mango, plátano o manzana", p:3.50},
+    {n:"Helado", d:"Vainilla, chocolate, coco o mango", p:4.50, elegir:[{"nombre": "Sabor", "obligatorio": true, "opciones": ["Vainilla", "Chocolate", "Coco", "Mango"]}]},
+    {n:"Lassi", d:"Batido de yogur: mango, plátano o manzana", p:3.50, elegir:[{"nombre": "Sabor", "obligatorio": true, "opciones": ["Mango", "Plátano", "Manzana"]}]},
     {n:"Raita", d:"Yogur con pepino, cebolla y comino", p:2.25},
   ]},
   "Té": { color:"#55704a", foto:"", emoji:"🍵", items:[
@@ -888,6 +948,23 @@ const MESAS = [
 
 let mesaActual = 'Barra';
 let comandasPorMesa = { 'Barra': [] };
+let descuentosPorMesa = {};   // { mesa: {tipo:'%'|'€', valor:n} }
+
+const redondear = (x)=> Math.round(x*100)/100;
+function subtotalCarrito(){ return redondear(carrito.reduce((s,c)=>s+c.qty*c.p,0)); }
+function importeDescuento(){
+  const d = descuentosPorMesa[mesaActual];
+  if(!d || !carrito.length) return 0;
+  const sub = subtotalCarrito();
+  const imp = d.tipo==='%' ? sub*d.valor/100 : d.valor;
+  return redondear(Math.min(Math.max(imp,0), sub));
+}
+function totalAPagar(){ return redondear(subtotalCarrito() - importeDescuento()); }
+function textoDescuento(){
+  const d = descuentosPorMesa[mesaActual];
+  if(!d) return '';
+  return d.tipo==='%' ? ('Descuento ' + String(d.valor).replace('.',',') + ' %') : 'Descuento';
+}
 
 let ventasDia = [];
 
@@ -917,6 +994,7 @@ function registrarVenta(datos){
 
 function guardarEstado(){
   localStorage.setItem('katmandu_comandas', JSON.stringify(comandasPorMesa));
+  localStorage.setItem('katmandu_descuentos', JSON.stringify(descuentosPorMesa));
   localStorage.setItem('katmandu_mesa_actual', mesaActual);
 }
 function cargarEstado(){
@@ -925,6 +1003,7 @@ function cargarEstado(){
     if(guardado) comandasPorMesa = JSON.parse(guardado);
   }catch(e){ comandasPorMesa = { 'Barra': [] }; }
   if(!comandasPorMesa['Barra']) comandasPorMesa['Barra'] = [];
+  try{ descuentosPorMesa = JSON.parse(localStorage.getItem('katmandu_descuentos') || '{}') || {}; }catch(e){ descuentosPorMesa = {}; }
   mesaActual = localStorage.getItem('katmandu_mesa_actual') || 'Barra';
   carrito = comandasPorMesa[mesaActual] || [];
   comandasPorMesa[mesaActual] = carrito;
@@ -1025,6 +1104,8 @@ async function moverComandaAMesa(destino){
 
   comandasPorMesa[origen] = [];
   comandasPorMesa[destino] = comandaDestino;
+  if(descuentosPorMesa[origen] && !descuentosPorMesa[destino]) descuentosPorMesa[destino] = descuentosPorMesa[origen];
+  delete descuentosPorMesa[origen];
 
   modoMover = false;
   mesaActual = destino;
@@ -1153,6 +1234,57 @@ function elegirPlatosMenu(item){
   });
 }
 
+/* ---------- descuento en € o % ---------- */
+let dtoTipo = '%';
+function abrirDescuento(){
+  if(carrito.length===0){ mostrarAviso('Añade productos a la comanda antes de aplicar un descuento.'); return; }
+  const actual = descuentosPorMesa[mesaActual];
+  dtoTipo = actual ? actual.tipo : '%';
+  document.getElementById('dto-valor').value = actual ? actual.valor : '';
+  document.getElementById('dto-quitar').style.display = actual ? '' : 'none';
+  marcarTipoDto();
+  previaDescuento();
+  document.getElementById('modal-descuento').classList.add('abierto');
+  setTimeout(()=> document.getElementById('dto-valor').focus(), 50);
+}
+function cerrarDescuento(){ document.getElementById('modal-descuento').classList.remove('abierto'); }
+function marcarTipoDto(){
+  document.querySelectorAll('[data-dto-tipo]').forEach(b=> b.classList.toggle('activa', b.dataset.dtoTipo===dtoTipo));
+  document.getElementById('dto-valor').placeholder = dtoTipo==='%' ? 'Ej.: 10 (%)' : 'Ej.: 5,00 (€)';
+}
+function leerValorDto(){
+  const v = parseFloat(String(document.getElementById('dto-valor').value).replace(',','.'));
+  return isNaN(v) ? null : redondear(v);
+}
+function previaDescuento(){
+  const v = leerValorDto();
+  const sub = subtotalCarrito();
+  const caja = document.getElementById('dto-previa');
+  const btn = document.getElementById('dto-aplicar');
+  let error = '';
+  if(v===null || v<=0) error = ' ';
+  else if(dtoTipo==='%' && v>100) error = 'El porcentaje no puede pasar de 100 %.';
+  else if(dtoTipo==='€' && v>sub) error = 'El descuento no puede ser mayor que la comanda (' + sub.toFixed(2) + ' €).';
+  btn.disabled = !!error;
+  if(error.trim()){ caja.textContent = error; caja.className = 'error'; return; }
+  if(error){ caja.textContent = 'Comanda: ' + sub.toFixed(2) + ' €'; caja.className = ''; return; }
+  const imp = redondear(dtoTipo==='%' ? sub*v/100 : v);
+  caja.innerHTML = `Comanda ${sub.toFixed(2)} € − descuento ${imp.toFixed(2)} € = <b>${(sub-imp).toFixed(2)} €</b>`;
+  caja.className = '';
+}
+document.querySelectorAll('[data-dto-tipo]').forEach(b=> b.addEventListener('click', ()=>{ dtoTipo = b.dataset.dtoTipo; marcarTipoDto(); previaDescuento(); }));
+document.getElementById('dto-valor').addEventListener('input', previaDescuento);
+document.getElementById('dto-valor').addEventListener('keydown', e=>{ if(e.key==='Enter' && !document.getElementById('dto-aplicar').disabled) document.getElementById('dto-aplicar').click(); });
+document.getElementById('dto-cancelar').addEventListener('click', cerrarDescuento);
+document.getElementById('dto-quitar').addEventListener('click', ()=>{ delete descuentosPorMesa[mesaActual]; cerrarDescuento(); renderCarrito(); });
+document.getElementById('dto-aplicar').addEventListener('click', ()=>{
+  const v = leerValorDto();
+  if(v===null || v<=0) return;
+  descuentosPorMesa[mesaActual] = { tipo: dtoTipo, valor: v };
+  cerrarDescuento();
+  renderCarrito();
+});
+
 function agregarExtra(){
   agregarAlCarrito({n:"Extra", p:0, editable:true});
 }
@@ -1171,6 +1303,7 @@ function borrarLinea(idx){
 async function vaciarCarrito(){
   if(carrito.length && !(await pedirConfirmacion('¿Vaciar toda la comanda?'))) return;
   carrito = [];
+  delete descuentosPorMesa[mesaActual];
   renderCarrito();
 }
 
@@ -1201,10 +1334,17 @@ function renderCarrito(){
       lista.appendChild(div);
     });
   }
+  if(carrito.length===0) delete descuentosPorMesa[mesaActual];
   const totalArticulos = carrito.reduce((s,c)=>s+c.qty,0);
-  const totalPrecio = carrito.reduce((s,c)=>s+c.qty*c.p,0);
+  const dto = importeDescuento();
   document.getElementById('total-articulos').textContent = totalArticulos;
-  document.getElementById('total-precio').textContent = totalPrecio.toFixed(2)+' €';
+  document.getElementById('fila-subtotal').style.display = dto ? '' : 'none';
+  document.getElementById('fila-descuento').style.display = dto ? '' : 'none';
+  document.getElementById('total-subtotal').textContent = subtotalCarrito().toFixed(2)+' €';
+  document.getElementById('txt-descuento').textContent = textoDescuento();
+  document.getElementById('total-descuento').textContent = '−' + dto.toFixed(2)+' €';
+  document.getElementById('total-precio').textContent = totalAPagar().toFixed(2)+' €';
+  document.getElementById('btn-descuento').classList.toggle('activo', !!dto);
   document.getElementById('btn-imprimir').disabled = carrito.length===0;
   document.getElementById('btn-pagar').disabled = carrito.length===0;
 
@@ -1228,11 +1368,28 @@ function siguienteNumeroTicket(){
   return n;
 }
 
-function construirTicketComanda(mesaTexto, num, pagoInfo){
-  const ahora = new Date();
-  document.getElementById('tk-fecha').textContent = ahora.toLocaleDateString('es-ES') + '  ' + ahora.toLocaleTimeString('es-ES');
+function siguienteNumeroFactura(){
+  // Serie por año (T26, T27…) y numeración correlativa sin saltos dentro de la serie
+  const anio = new Date().getFullYear();
+  const clave = 'katmandu_factura_' + anio;
+  const n = parseInt(localStorage.getItem(clave)||'0',10) + 1;
+  localStorage.setItem(clave, n);
+  return { numero: n, texto: 'T' + String(anio).slice(-2) + '-' + String(n).padStart(6,'0') };
+}
+
+function construirTicketComanda(mesaTexto, numeroFactura, pagoInfo, fecha){
+  const F = DATOS_FISCALES;
+  const ahora = fecha || new Date();
+  const esFactura = !!numeroFactura;
+  document.getElementById('tk-nombre-comercial').textContent = F.nombreComercial;
+  document.getElementById('tk-titular').textContent = F.titular;
+  document.getElementById('tk-nif').textContent = 'NIF: ' + F.nif;
+  document.getElementById('tk-direccion').innerHTML = F.direccion + '<br>' + F.cpCiudad;
+  document.getElementById('tk-telefono').textContent = 'Tel. ' + F.telefono;
+  document.getElementById('tk-tipo').textContent = esFactura ? 'FACTURA SIMPLIFICADA' : 'CUENTA · NO VÁLIDO COMO FACTURA';
+  document.getElementById('tk-numero').textContent = esFactura ? numeroFactura : '—';
+  document.getElementById('tk-fecha').textContent = ahora.toLocaleDateString('es-ES') + ' ' + ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('tk-mesa').textContent = mesaTexto;
-  document.getElementById('tk-numero').textContent = 'Ticket nº: ' + String(num).padStart(4,'0');
 
   const lineas = document.getElementById('tk-lineas');
   lineas.innerHTML = '';
@@ -1240,34 +1397,51 @@ function construirTicketComanda(mesaTexto, num, pagoInfo){
     const fila = document.createElement('div');
     fila.className = 'tk-item';
     fila.innerHTML = `
-      <span class="tk-item-nombre">${c.qty}x ${c.n}</span>${c.det ? `<span class="tk-item-det">${c.det.split(' · ').join('<br>')}</span>` : ''}
-      <span class="tk-item-precio">${(c.p*c.qty).toFixed(2)}€</span>
+      <span class="tk-item-nombre">${c.qty} ${c.n}</span>${c.det ? `<span class="tk-item-det">${c.det.split(' · ').join('<br>')}</span>` : ''}
+      ${c.qty>1 ? `<span class="tk-item-det">${c.qty} x ${c.p.toFixed(2).replace('.',',')}</span>` : ''}
+      <span class="tk-item-precio">${(c.p*c.qty).toFixed(2).replace('.',',')}</span>
     `;
     lineas.appendChild(fila);
   });
 
-  const totalArticulos = carrito.reduce((s,c)=>s+c.qty,0);
-  const totalPrecio = carrito.reduce((s,c)=>s+c.qty*c.p,0);
-  document.getElementById('tk-articulos').textContent = totalArticulos;
-  document.getElementById('tk-total').textContent = totalPrecio.toFixed(2)+' €';
+  const eur = (x)=> x.toFixed(2).replace('.',',') + ' €';
+  const subtotal = subtotalCarrito();
+  const dto = importeDescuento();
+  const total = totalAPagar();
+  const base = redondear(total / (1 + F.iva/100));
+  const cuota = redondear(total - base);
+  document.getElementById('tk-fila-subtotal').style.display = dto ? '' : 'none';
+  document.getElementById('tk-fila-descuento').style.display = dto ? '' : 'none';
+  document.getElementById('tk-subtotal').textContent = eur(subtotal);
+  document.getElementById('tk-txt-descuento').textContent = textoDescuento();
+  document.getElementById('tk-descuento').textContent = '-' + eur(dto);
+  document.getElementById('tk-total').textContent = eur(total);
+  document.getElementById('tk-iva-tipo').textContent = F.iva + ' %';
+  document.getElementById('tk-iva-base').textContent = base.toFixed(2).replace('.',',');
+  document.getElementById('tk-iva-cuota').textContent = cuota.toFixed(2).replace('.',',');
+  document.getElementById('tk-iva-total').textContent = total.toFixed(2).replace('.',',');
+  document.getElementById('tk-articulos').textContent = carrito.reduce((s,c)=>s+c.qty,0);
 
   const pagoDiv = document.getElementById('tk-pago-info');
   if(pagoInfo){
-    let html = `<hr><div>Pago: ${pagoInfo.metodo==='efectivo'?'Efectivo':'Tarjeta'}</div>`;
+    let html = `<hr><div>Forma de pago: ${pagoInfo.metodo==='efectivo'?'Efectivo':'Tarjeta'}</div>`;
     if(pagoInfo.metodo==='efectivo'){
-      html += `<div>Entregado: ${pagoInfo.recibido.toFixed(2)} €</div>`;
-      html += `<div>Cambio: ${pagoInfo.cambio.toFixed(2)} €</div>`;
+      html += `<div>Entregado: ${eur(pagoInfo.recibido)}</div>`;
+      html += `<div>Cambio: ${eur(pagoInfo.cambio)}</div>`;
     }
     pagoDiv.innerHTML = html;
   } else {
     pagoDiv.innerHTML = '';
   }
+  document.getElementById('tk-pie').innerHTML = esFactura
+    ? '¡Gracias por su visita!<br><span class="tk-peq">Si necesita factura completa con sus datos, pídala en caja.</span>'
+    : '<span class="tk-peq">Esta cuenta no es una factura. La factura simplificada se entrega al pagar.</span>';
 }
 
 function imprimirTicketCliente(){
   if(carrito.length===0) return;
   const mesaTexto = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
-  construirTicketComanda(mesaTexto, verNumeroTicketActual(), null);
+  construirTicketComanda(mesaTexto, null, null);
   document.getElementById('ticket').classList.add('activo');
   window.print();
 }
@@ -1286,8 +1460,8 @@ function abrirPago(){
   document.getElementById('pago-cambio-txt').textContent = '';
   document.getElementById('btn-confirmar-pago').disabled = true;
   document.querySelectorAll('.btn-metodo').forEach(b=> b.classList.remove('activa'));
-  const totalPrecio = carrito.reduce((s,c)=>s+c.qty*c.p,0);
-  document.getElementById('pago-total-txt').textContent = totalPrecio.toFixed(2)+' €';
+  const totalPrecio = totalAPagar();
+  document.getElementById('pago-total-txt').textContent = totalPrecio.toFixed(2)+' €' + (importeDescuento() ? ' (con descuento)' : '');
   document.getElementById('modal-pago').classList.add('abierto');
 }
 function cerrarPago(){
@@ -1310,7 +1484,7 @@ function elegirMetodo(m){
 }
 
 document.getElementById('input-recibido').addEventListener('input', ()=>{
-  const totalPrecio = carrito.reduce((s,c)=>s+c.qty*c.p,0);
+  const totalPrecio = totalAPagar();
   const recibido = parseFloat(document.getElementById('input-recibido').value);
   const txt = document.getElementById('pago-cambio-txt');
   const btn = document.getElementById('btn-confirmar-pago');
@@ -1324,6 +1498,17 @@ document.getElementById('input-recibido').addEventListener('input', ()=>{
     btn.disabled = false;
   }
 });
+
+// Datos fiscales del ticket (factura simplificada, art. 7 RD 1619/2012)
+const DATOS_FISCALES = {
+  nombreComercial: 'BAR KATMANDU',
+  titular: 'Sudesh Kumar Shrestha',
+  nif: 'Y5601194H',
+  direccion: "C/ Torrent de l'Olla, 148",
+  cpCiudad: '08012 Barcelona',
+  telefono: '675 19 25 09',
+  iva: 10            // hostelería: 10 % IVA incluido en todos los precios
+};
 
 const NOMBRE_IMPRESORA_CAJON = "POS-80C (copy 1)";
 
@@ -1345,7 +1530,9 @@ function abrirCajonQZ(){
 function confirmarPago(){
   if(!metodoSeleccionado || carrito.length===0) return;
   const totalArticulos = carrito.reduce((s,c)=>s+c.qty,0);
-  const totalPrecio = carrito.reduce((s,c)=>s+c.qty*c.p,0);
+  const totalPrecio = totalAPagar();
+  const subtotal = subtotalCarrito();
+  const descuento = importeDescuento();
   let recibido = null, cambio = null;
   if(metodoSeleccionado==='efectivo'){
     recibido = parseFloat(document.getElementById('input-recibido').value);
@@ -1354,15 +1541,18 @@ function confirmarPago(){
   }
 
   const mesaTexto = mesaActual==='Barra' ? 'Barra' : ('Mesa '+mesaActual);
-  const num = siguienteNumeroTicket();
+  const factura = siguienteNumeroFactura();
   const ahora = new Date();
 
   registrarVenta({
     fecha: ahora.toISOString(),
     horaTexto: ahora.toLocaleTimeString('es-ES'),
-    numTicket: num,
+    numTicket: factura.numero,
+    factura: factura.texto,
     mesa: mesaTexto,
     articulos: totalArticulos,
+    subtotal: subtotal,
+    descuento: descuento,
     total: totalPrecio,
     metodo: metodoSeleccionado,
     recibido: recibido,
@@ -1373,13 +1563,14 @@ function confirmarPago(){
     abrirCajonQZ();
   }
 
-  construirTicketComanda(mesaTexto, num, {metodo:metodoSeleccionado, recibido, cambio});
+  construirTicketComanda(mesaTexto, factura.texto, {metodo:metodoSeleccionado, recibido, cambio}, ahora);
   document.getElementById('ticket').classList.add('activo');
   window.print();
 
   cerrarPago();
   carrito = [];
   comandasPorMesa[mesaActual] = [];
+  delete descuentosPorMesa[mesaActual];
   guardarEstado();
   renderCarrito();
 }
@@ -1528,7 +1719,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function calcularTotalesDia(){
   const totalEfectivo = ventasDia.filter(v=>v.metodo==='efectivo').reduce((s,v)=>s+v.total,0);
   const totalTarjeta = ventasDia.filter(v=>v.metodo==='tarjeta').reduce((s,v)=>s+v.total,0);
-  return { totalEfectivo, totalTarjeta, totalGeneral: totalEfectivo+totalTarjeta, numTickets: ventasDia.length };
+  const totalGeneral = totalEfectivo+totalTarjeta;
+  const totalDescuentos = ventasDia.reduce((s,v)=>s+(v.descuento||0),0);
+  const base = Math.round(totalGeneral/(1+DATOS_FISCALES.iva/100)*100)/100;
+  const cuota = Math.round((totalGeneral-base)*100)/100;
+  return { totalEfectivo, totalTarjeta, totalGeneral, numTickets: ventasDia.length, totalDescuentos, base, cuota };
 }
 
 function renderCierre(){
@@ -1539,11 +1734,14 @@ function renderCierre(){
     <div class="fila"><span>Efectivo</span><span>${t.totalEfectivo.toFixed(2)} €</span></div>
     <div class="fila"><span>Tarjeta</span><span>${t.totalTarjeta.toFixed(2)} €</span></div>
     <div class="fila total"><span>TOTAL</span><span>${t.totalGeneral.toFixed(2)} €</span></div>
+    ${t.totalDescuentos ? `<div class="fila"><span>Descuentos hechos</span><span>${t.totalDescuentos.toFixed(2)} €</span></div>` : ''}
+    <div class="fila"><span>Base imponible (${DATOS_FISCALES.iva} %)</span><span>${t.base.toFixed(2)} €</span></div>
+    <div class="fila"><span>IVA ${DATOS_FISCALES.iva} %</span><span>${t.cuota.toFixed(2)} €</span></div>
   `;
   if(ventasDia.length){
     html += '<div class="lista-ventas">';
     ventasDia.slice().reverse().forEach(v=>{
-      html += `<div class="linea-venta">#${String(v.numTicket).padStart(4,'0')} · ${v.horaTexto} · ${v.mesa} · ${v.metodo==='efectivo'?'Efvo':'Tarj'} · ${v.total.toFixed(2)}€</div>`;
+      html += `<div class="linea-venta">${v.factura || ('#'+String(v.numTicket).padStart(4,'0'))} · ${v.horaTexto} · ${v.mesa} · ${v.metodo==='efectivo'?'Efvo':'Tarj'} · ${v.total.toFixed(2)}€</div>`;
     });
     html += '</div>';
   } else {
@@ -1600,6 +1798,9 @@ function imprimirCierre(){
       <tr><td>Efectivo</td><td class="der">${t.totalEfectivo.toFixed(2)} €</td></tr>
       <tr><td>Tarjeta</td><td class="der">${t.totalTarjeta.toFixed(2)} €</td></tr>
       <tr class="grande"><td>TOTAL</td><td class="der">${t.totalGeneral.toFixed(2)} €</td></tr>
+      ${t.totalDescuentos ? `<tr><td>Descuentos</td><td class="der">${t.totalDescuentos.toFixed(2)} €</td></tr>` : ''}
+      <tr><td>Base imponible ${DATOS_FISCALES.iva}%</td><td class="der">${t.base.toFixed(2)} €</td></tr>
+      <tr><td>IVA ${DATOS_FISCALES.iva}%</td><td class="der">${t.cuota.toFixed(2)} €</td></tr>
     </table>
     ${filasReservas}
   `;
